@@ -1,0 +1,102 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireUser, fail } from "@/lib/api";
+import { generatePrompts } from "@/lib/prompts";
+import { getStyle, STYLE_PRESETS } from "@/lib/styles";
+import { LIMITS, estimateImageCount } from "@/lib/config";
+
+export const maxDuration = 120;
+
+const Body = z.object({
+  title: z.string().trim().max(120).optional(),
+  script: z.string().trim().min(50).max(LIMITS.maxScriptChars),
+  styleId: z.enum(
+    STYLE_PRESETS.map((s) => s.id) as [string, ...string[]],
+  ),
+  density: z.string().default("standard"),
+  /** Optional override; still clamped to the hard ceiling below. */
+  imageCount: z.number().int().optional(),
+});
+
+/**
+ * Creates a job and writes its prompts.
+ *
+ * Deliberately spends no credits: the user reviews and edits the prompts first,
+ * and only /start commits their balance. Prompt writing costs us a fraction of
+ * a cent, which is a cheap way to let people see the quality before paying.
+ */
+export async function POST(request: Request) {
+  const auth = await requireUser();
+  if (auth.error) return auth.error;
+  const { user, admin } = auth;
+
+  const parsed = Body.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? "Invalid request");
+  }
+  const { title, script, styleId, density } = parsed.data;
+
+  // Rate limit before doing any paid work.
+  const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
+  const { count: recentJobs } = await admin
+    .from("jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", hourAgo);
+
+  if ((recentJobs ?? 0) >= LIMITS.maxJobsPerHour) {
+    return fail("Too many projects in the last hour. Try again shortly.", 429);
+  }
+
+  const imageCount = Math.min(
+    LIMITS.maxImagesPerJob,
+    Math.max(
+      LIMITS.minImagesPerJob,
+      parsed.data.imageCount ?? estimateImageCount(script, density),
+    ),
+  );
+
+  const style = getStyle(styleId);
+
+  const { data: job, error: insertError } = await admin
+    .from("jobs")
+    .insert({
+      user_id: user.id,
+      title: title || script.trim().slice(0, 60).replace(/\s+\S*$/, "") || "Untitled",
+      script,
+      style_id: style.id,
+      image_count: imageCount,
+      status: "draft",
+    })
+    .select()
+    .single();
+
+  if (insertError || !job) return fail("Could not create the project", 500);
+
+  try {
+    const prompts = await generatePrompts({ script, imageCount, style });
+
+    const { error: promptError } = await admin.from("job_images").insert(
+      prompts.map((p) => ({
+        job_id: job.id,
+        idx: p.idx,
+        prompt: p.prompt,
+      })),
+    );
+    if (promptError) throw new Error(promptError.message);
+
+    await admin
+      .from("jobs")
+      .update({ status: "prompts_ready", image_count: prompts.length })
+      .eq("id", job.id);
+
+    return NextResponse.json({ jobId: job.id, imageCount: prompts.length });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await admin
+      .from("jobs")
+      .update({ status: "failed", error: message })
+      .eq("id", job.id);
+    return fail(`Could not write the prompts: ${message}`, 502);
+  }
+}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#1c1a17"/>
+  <!-- A frame with its top-right corner cut away: the cut, and the frame. -->
+  <path d="M8 10.5a2.5 2.5 0 0 1 2.5-2.5H18v4h-5.5v9H8Z" fill="#faf7f2"/>
+  <path d="M24 21.5a2.5 2.5 0 0 1-2.5 2.5H14v-4h5.5v-9H24Z" fill="#b4552d"/>
+</svg>

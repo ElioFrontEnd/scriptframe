@@ -1,0 +1,288 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Cutframe design system
+
+   Editorial and calm rather than the neon-gradient look every AI tool wears.
+   Two reasons: the product's whole job is producing images, and a loud
+   interface fights its own output; and a restrained, typographic surface reads
+   as an instrument built by someone with taste rather than a weekend wrapper.
+
+   Warm paper ground, ink text, a single clay accent, and one real serif for
+   display. Everything else is spacing and restraint.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Paper --------------------------------------------------------------- */
+  --paper:        #faf7f2;  /* page ground, warm off-white */
+  --paper-raised: #ffffff;  /* cards sitting above the page */
+  --paper-sunk:   #f2ede4;  /* wells, inputs, image placeholders */
+  --paper-deep:   #1c1a17;  /* inverted sections, image mats */
+
+  /* Ink ----------------------------------------------------------------- */
+  --ink:        #1c1a17;
+  --ink-muted:  #6b6459;
+  --ink-faint:  #9c9488;
+  --ink-invert: #f6f2ec;
+
+  /* Line ---------------------------------------------------------------- */
+  --line:        #e2dad0;
+  --line-strong: #cfc4b6;
+
+  /* Accent — clay. One accent only, used for action and emphasis. -------- */
+  --clay:       #b4552d;
+  --clay-hover: #9c4826;
+  --clay-soft:  #f6e7df;
+  --clay-ink:   #ffffff;
+
+  /* Semantic ------------------------------------------------------------ */
+  --good:      #3f6f4f;
+  --good-soft: #e6efe7;
+  --warn:      #8a6414;
+  --warn-soft: #f7eeda;
+  --bad:       #9b3126;
+  --bad-soft:  #f7e5e2;
+
+  /* Elevation — barely there. Paper does not float. --------------------- */
+  --lift-1: 0 1px 2px rgba(28, 26, 23, 0.04);
+  --lift-2: 0 2px 4px rgba(28, 26, 23, 0.05), 0 8px 24px rgba(28, 26, 23, 0.05);
+  --lift-3: 0 4px 8px rgba(28, 26, 23, 0.06), 0 16px 48px rgba(28, 26, 23, 0.08);
+
+  --radius:    10px;
+  --radius-lg: 16px;
+
+  /* Type ---------------------------------------------------------------- */
+  /* The webfonts are requested in layout.tsx. Every stack below ends in
+     faces that exist on real machines, so the design holds if they never
+     arrive — Georgia and Charter are close enough in colour and width that
+     the layout does not reflow noticeably. */
+  --font-display:
+    "Newsreader", Georgia, "Bitstream Charter", "Times New Roman", serif;
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-clay: var(--clay);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+}
+
+/* ---------------------------------------------------------------- base -- */
+
+* {
+  border-color: var(--line);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "kern", "liga", "cv05";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--clay-soft);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------- components -- */
+
+@layer components {
+  /* Display type. Optical sizing does the work at large sizes; the tight
+     tracking keeps headlines from drifting apart. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.06;
+  }
+  .display-em {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--ink-faint)];
+  }
+
+  /* Buttons ------------------------------------------------------------- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] px-5 py-3
+           text-[15px] font-medium leading-none transition-all duration-150
+           disabled:cursor-not-allowed disabled:opacity-40
+           bg-[var(--clay)] text-[var(--clay-ink)]
+           hover:bg-[var(--clay-hover)] active:translate-y-px;
+    box-shadow: var(--lift-1);
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] px-5 py-3
+           text-[15px] font-medium leading-none transition-all duration-150
+           disabled:cursor-not-allowed disabled:opacity-40
+           border border-[var(--line-strong)] bg-[var(--paper-raised)]
+           text-[var(--ink)] hover:bg-[var(--paper-sunk)] active:translate-y-px;
+  }
+  .btn-quiet {
+    @apply inline-flex items-center justify-center gap-2 rounded-[8px] px-3 py-2
+           text-[13px] font-medium leading-none transition-colors duration-150
+           text-[var(--ink-muted)] hover:bg-[var(--paper-sunk)]
+           hover:text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-sm {
+    @apply px-3.5 py-2 text-[13px];
+  }
+
+  /* Surfaces ------------------------------------------------------------ */
+  .card {
+    @apply rounded-[16px] border border-[var(--line)] bg-[var(--paper-raised)];
+  }
+  .well {
+    @apply rounded-[10px] bg-[var(--paper-sunk)];
+  }
+
+  /* Form ---------------------------------------------------------------- */
+  .field {
+    @apply w-full rounded-[10px] border border-[var(--line-strong)]
+           bg-[var(--paper-raised)] px-3.5 py-3 text-[15px] text-[var(--ink)]
+           transition-colors duration-150
+           placeholder:text-[var(--ink-faint)]
+           focus:border-[var(--clay)] focus:outline-none;
+  }
+  .label {
+    @apply mb-2 block text-[13px] font-medium text-[var(--ink)];
+  }
+  .hint {
+    @apply text-[13px] leading-relaxed text-[var(--ink-muted)];
+  }
+
+  /* Chips ---------------------------------------------------------------
+     Tailwind v4 only lets @apply pull in real utilities, not other component
+     classes, so each variant spells out the shared set rather than composing
+     from a base .chip. */
+  .chip-neutral {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1
+           text-[12px] font-medium leading-none
+           border-[var(--line-strong)] text-[var(--ink-muted)];
+  }
+  .chip-good {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-transparent
+           px-2.5 py-1 text-[12px] font-medium leading-none text-[var(--good)];
+    background: var(--good-soft);
+  }
+  .chip-warn {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-transparent
+           px-2.5 py-1 text-[12px] font-medium leading-none text-[var(--warn)];
+    background: var(--warn-soft);
+  }
+  .chip-bad {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-transparent
+           px-2.5 py-1 text-[12px] font-medium leading-none text-[var(--bad)];
+    background: var(--bad-soft);
+  }
+
+  /* A hairline rule that fades out — used to separate long pages without
+     drawing a hard box around everything. */
+  .rule {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--line-strong) 15%,
+      var(--line-strong) 85%,
+      transparent
+    );
+  }
+}
+
+/* ---------------------------------------------------------- utilities -- */
+
+/* Custom utilities must use Tailwind v4's @utility rule. Declaring them inside
+   `@layer utilities` with a grouped selector silently emits nothing, which is
+   how text ended up spilling past its container with no visible error. */
+@utility clamp-1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+}
+@utility clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+@utility clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+@layer utilities {
+  .shimmer {
+    background: linear-gradient(
+      100deg,
+      var(--paper-sunk) 20%,
+      #e9e2d7 40%,
+      var(--paper-sunk) 60%
+    );
+    background-size: 300% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    to { background-position: -150% 0; }
+  }
+
+  .fade-up {
+    animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Faint paper tooth. Keeps large flat areas from looking like dead pixels
+     without adding an image request. */
+  .tooth {
+    background-image: radial-gradient(
+      rgba(28, 26, 23, 0.022) 1px,
+      transparent 1px
+    );
+    background-size: 4px 4px;
+  }
+}
