@@ -48,30 +48,21 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  // Insert first: if this session was already processed the unique index
-  // rejects it and we skip the top-up rather than granting it twice.
-  const { error: ledgerError } = await admin.from("credit_transactions").insert({
-    user_id: userId,
-    delta: credits,
-    reason: "purchase",
-    stripe_session_id: session.id,
+  // One transaction writes both the ledger row and the balance. If it throws,
+  // neither happened and the 500 below asks Stripe to try again — the one
+  // outcome we must never reach is money taken with no credits delivered.
+  const { error } = await admin.rpc("grant_purchase", {
+    p_user: userId,
+    p_credits: credits,
+    p_session: session.id,
   });
 
-  if (ledgerError) {
-    if (ledgerError.code === "23505") return NextResponse.json({ received: true });
-    return NextResponse.json({ error: "Ledger write failed" }, { status: 500 });
+  if (error) {
+    console.error("grant_purchase failed", session.id, error.message);
+    return NextResponse.json({ error: "Could not credit the account" }, { status: 500 });
   }
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("credits")
-    .eq("id", userId)
-    .single();
-
-  await admin
-    .from("profiles")
-    .update({ credits: (profile?.credits ?? 0) + credits })
-    .eq("id", userId);
-
+  // A false return means this session was already credited — a replayed
+  // webhook, which is normal and must answer 200 so Stripe stops retrying.
   return NextResponse.json({ received: true });
 }

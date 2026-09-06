@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BuyCredits from "@/components/app/BuyCredits";
+import PaymentBanner from "@/components/app/PaymentBanner";
 import { requireUserPage, createClient } from "@/lib/supabase/server";
 import { SUPPORT_EMAIL } from "@/lib/config";
 
@@ -15,7 +16,7 @@ const REASONS: Record<string, string> = {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string }>;
+  searchParams: Promise<{ paid?: string; cancelled?: string }>;
 }) {
   const params = await searchParams;
   const user = await requireUserPage();
@@ -41,11 +42,12 @@ export default async function BillingPage({
         subscription.
       </p>
 
-      {params.paid && (
-        <div className="mt-6 rounded-[10px] bg-[var(--good-soft)] px-4 py-3 text-[14px] text-[var(--good)]">
-          Payment received — your credits are on the balance below.
-        </div>
-      )}
+      <PaymentBanner
+        paid={!!params.paid}
+        cancelled={!!params.cancelled}
+        credits={credits}
+        supportEmail={SUPPORT_EMAIL}
+      />
 
       <div className="card mt-7 flex flex-wrap items-end justify-between gap-6 p-6">
         <div>

@@ -1,5 +1,6 @@
 import type { Frame } from "@/components/app/FrameDialog";
 import { sceneOf } from "@/lib/text";
+import { formatTimecode } from "@/lib/transcript";
 
 export default function FrameCard({
   frame,
@@ -32,6 +33,9 @@ export default function FrameCard({
 
         <span className="absolute left-2 top-2 rounded bg-black/55 px-1.5 py-0.5 font-mono text-[10px] text-white">
           {String(frame.idx + 1).padStart(3, "0")}
+          {frame.startMs !== null && frame.startMs !== undefined && (
+            <span className="ml-1.5 opacity-70">{formatTimecode(frame.startMs)}</span>
+          )}
         </span>
 
         {frame.status === "failed" && (

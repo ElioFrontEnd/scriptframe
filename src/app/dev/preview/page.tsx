@@ -7,6 +7,7 @@ import StyleSwatch from "@/components/StyleSwatch";
 import JobStatusChip from "@/components/app/JobStatusChip";
 import Wordmark from "@/components/Wordmark";
 import BuyCredits from "@/components/app/BuyCredits";
+import NewProjectForm from "@/components/app/NewProjectForm";
 import { STYLE_PRESETS } from "@/lib/styles";
 
 /**
@@ -183,6 +184,13 @@ export default function PreviewPage() {
 
       <Section title="Credit packs">
         <BuyCredits />
+      </Section>
+
+      <Section
+        title="New project"
+        note="Paste a timestamped transcript into the script box — the timing panel and the seconds-per-image slider replace the pacing buttons."
+      >
+        <NewProjectForm credits={840} customStyles={[]} previews={{}} />
       </Section>
     </div>
   );

@@ -10,6 +10,8 @@ export type FramePayload = {
   status: "pending" | "running" | "done" | "failed";
   error: string | null;
   url: string | null;
+  /** Milliseconds into the video, when the script was a timed transcript. */
+  startMs: number | null;
 };
 
 export type JobPayload = {
@@ -50,7 +52,7 @@ export async function loadJobPayload(
 
   const { data: images } = await admin
     .from("job_images")
-    .select("id, idx, prompt, status, storage_key, error")
+    .select("id, idx, prompt, status, storage_key, error, start_ms")
     .eq("job_id", jobId)
     .order("idx");
 
@@ -68,6 +70,7 @@ export async function loadJobPayload(
     status: img.status,
     error: img.error,
     url: img.storage_key ? (urls[img.storage_key] ?? null) : null,
+    startMs: img.start_ms ?? null,
   }));
 
   return {

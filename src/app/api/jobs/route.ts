@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser, fail } from "@/lib/api";
-import { generatePrompts } from "@/lib/prompts";
+import { generatePrompts, generatePromptsForBlocks } from "@/lib/prompts";
+import {
+  parseTranscript,
+  fitCues,
+  cuesToPlainText,
+  DEFAULT_TARGET_SECONDS,
+  MIN_TARGET_SECONDS,
+  MAX_TARGET_SECONDS,
+} from "@/lib/transcript";
 import { getStyle, asResolvedStyle, STYLE_PRESETS, type ResolvedStyle } from "@/lib/styles";
 import { LIMITS, estimateImageCount } from "@/lib/config";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -19,6 +27,12 @@ const Body = z
     /** A style the user made from their own reference image. */
     customStyleId: z.string().uuid().optional(),
     density: z.string().default("standard"),
+    /** Seconds per image when the script is a timestamped transcript. */
+    targetSeconds: z
+      .number()
+      .min(MIN_TARGET_SECONDS)
+      .max(MAX_TARGET_SECONDS)
+      .default(DEFAULT_TARGET_SECONDS),
     /** Optional override; still clamped to the hard ceiling below. */
     imageCount: z.number().int().optional(),
   })
@@ -81,20 +95,40 @@ export async function POST(request: Request) {
   const style = await resolveRequestedStyle(admin, user.id, parsed.data);
   if (!style) return fail("That style isn't available", 400);
 
-  const imageCount = Math.min(
-    LIMITS.maxImagesPerJob,
-    Math.max(
-      LIMITS.minImagesPerJob,
-      parsed.data.imageCount ?? estimateImageCount(script, density),
-    ),
-  );
+  // A timestamped transcript decides the timing itself: the voiceover already
+  // exists, so the cues are ground truth and the pacing setting is irrelevant.
+  const cues = parseTranscript(script);
+  const timed = cues.length > 0;
+
+  const { blocks, targetSeconds: usedTarget } = timed
+    ? fitCues(cues, parsed.data.targetSeconds, LIMITS.maxImagesPerJob)
+    : { blocks: [], targetSeconds: parsed.data.targetSeconds };
+
+  // Timestamps are stripped from the stored script — they were timing
+  // instructions, not narration, and nothing downstream should read them.
+  const storedScript = timed ? cuesToPlainText(cues) : script;
+
+  const imageCount = timed
+    ? blocks.length
+    : Math.min(
+        LIMITS.maxImagesPerJob,
+        Math.max(
+          LIMITS.minImagesPerJob,
+          parsed.data.imageCount ?? estimateImageCount(script, density),
+        ),
+      );
+
+  if (imageCount < LIMITS.minImagesPerJob) {
+    return fail("That transcript didn't yield any usable moments", 400);
+  }
 
   const { data: job, error: insertError } = await admin
     .from("jobs")
     .insert({
       user_id: user.id,
-      title: title || script.trim().slice(0, 60).replace(/\s+\S*$/, "") || "Untitled",
-      script,
+      title:
+        title || storedScript.trim().slice(0, 60).replace(/\s+\S*$/, "") || "Untitled",
+      script: storedScript,
       style_id: style.id,
       // Snapshot, so this job keeps its look even if the style is later edited
       // or deleted. Everything that displays a job reads this.
@@ -108,13 +142,16 @@ export async function POST(request: Request) {
   if (insertError || !job) return fail("Could not create the project", 500);
 
   try {
-    const prompts = await generatePrompts({ script, imageCount, style });
+    const prompts = timed
+      ? await generatePromptsForBlocks({ blocks, style })
+      : await generatePrompts({ script: storedScript, imageCount, style });
 
     const { error: promptError } = await admin.from("job_images").insert(
       prompts.map((p) => ({
         job_id: job.id,
         idx: p.idx,
         prompt: p.prompt,
+        start_ms: "startMs" in p ? p.startMs : null,
       })),
     );
     if (promptError) throw new Error(promptError.message);
@@ -124,7 +161,12 @@ export async function POST(request: Request) {
       .update({ status: "prompts_ready", image_count: prompts.length })
       .eq("id", job.id);
 
-    return NextResponse.json({ jobId: job.id, imageCount: prompts.length });
+    return NextResponse.json({
+      jobId: job.id,
+      imageCount: prompts.length,
+      timed,
+      targetSeconds: timed ? usedTarget : undefined,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await admin

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatTimecode } from "@/lib/transcript";
 
 export type Frame = {
   id: string;
@@ -9,6 +10,8 @@ export type Frame = {
   status: "pending" | "running" | "done" | "failed";
   error: string | null;
   url: string | null;
+  /** Milliseconds into the video, when the script was a timed transcript. */
+  startMs?: number | null;
 };
 
 /**
@@ -114,6 +117,11 @@ export default function FrameDialog({
           <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3.5">
             <span className="font-mono text-[12px] text-[var(--ink-muted)]">
               {String(frame.idx + 1).padStart(3, "0")} / {String(total).padStart(3, "0")}
+              {frame.startMs !== null && frame.startMs !== undefined && (
+                <span className="ml-2 text-[var(--clay)]">
+                  {formatTimecode(frame.startMs)}
+                </span>
+              )}
             </span>
             <button onClick={onClose} className="btn-quiet" aria-label="Close">
               Close

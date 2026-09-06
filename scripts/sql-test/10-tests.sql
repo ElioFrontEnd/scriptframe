@@ -159,3 +159,115 @@ begin
   raise notice 'custom style assertions passed';
 end;
 $$;
+
+-- ------------------------------------------------------ purchases (004) --
+--
+-- The money-in path. What matters: a customer is credited exactly once per
+-- checkout session, a replayed webhook is a no-op rather than a free top-up,
+-- and a purchase for an account that doesn't exist leaves nothing behind.
+do $$
+declare
+  u uuid;
+  ok boolean;
+  n integer;
+  bal integer;
+begin
+  insert into auth.users (email) values ('buyer@example.com') returning id into u;
+  update public.profiles set credits = 0 where id = u;
+
+  select public.grant_purchase(u, 400, 'cs_test_alpha') into ok;
+  perform assert(ok, 'a purchase is credited');
+
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 400, 'the balance went up by the pack size');
+
+  select count(*) into n from public.credit_transactions
+   where user_id = u and reason = 'purchase';
+  perform assert(n = 1, 'the purchase is in the ledger once');
+
+  -- Stripe retries. It must not pay out twice.
+  select public.grant_purchase(u, 400, 'cs_test_alpha') into ok;
+  perform assert(not ok, 'a replayed session reports already-credited');
+
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 400, 'a replayed session grants nothing');
+
+  select count(*) into n from public.credit_transactions
+   where user_id = u and reason = 'purchase';
+  perform assert(n = 1, 'a replayed session writes no second ledger row');
+
+  -- A different session for the same customer is a real second purchase.
+  select public.grant_purchase(u, 1000, 'cs_test_beta') into ok;
+  perform assert(ok, 'a second checkout is credited');
+
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 1400, 'balances accumulate across purchases');
+
+  -- Nonsense amounts buy nothing.
+  select public.grant_purchase(u, 0, 'cs_test_zero') into ok;
+  perform assert(not ok, 'a zero-credit purchase is refused');
+  select public.grant_purchase(u, -500, 'cs_test_neg') into ok;
+  perform assert(not ok, 'a negative purchase is refused');
+
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 1400, 'refused purchases leave the balance alone');
+
+  -- An unknown account must raise and roll the ledger row back with it, so the
+  -- webhook fails and Stripe retries rather than us recording a payment nobody
+  -- was credited for. In practice the foreign key catches it first; the
+  -- row-count check inside grant_purchase is the backstop if that key is ever
+  -- relaxed. Either route is a pass — what must not happen is a silent success.
+  begin
+    perform public.grant_purchase(
+      '00000000-0000-0000-0000-000000000009'::uuid, 400, 'cs_test_ghost');
+    perform assert(false, 'a purchase for a missing account raises');
+  exception
+    when foreign_key_violation then
+      raise notice '  ok   a purchase for a missing account raises';
+    when others then
+      if sqlerrm like 'grant_purchase:%' then
+        raise notice '  ok   a purchase for a missing account raises';
+      else
+        raise;
+      end if;
+  end;
+
+  select count(*) into n from public.credit_transactions
+   where stripe_session_id = 'cs_test_ghost';
+  perform assert(n = 0, 'and leaves no ledger row behind');
+
+  raise notice 'purchase assertions passed';
+end;
+$$;
+
+-- ------------------------------------------------- function grants (004) --
+--
+-- The functions are `security definer`, so RLS does not protect them. If
+-- PostgREST can reach them a signed-in user can call refund_credits() on their
+-- own account and mint credits. These assertions are the only thing standing
+-- between that and a bill we pay.
+do $$
+declare
+  f text;
+  r text;
+begin
+  foreach f in array array[
+    'public.spend_credits(uuid, integer, uuid)',
+    'public.refund_credits(uuid, integer, uuid)',
+    'public.claim_images(uuid, integer)',
+    'public.grant_purchase(uuid, integer, text)'
+  ] loop
+    foreach r in array array['anon', 'authenticated'] loop
+      perform assert(
+        not has_function_privilege(r, f, 'execute'),
+        format('%s is closed to %s', split_part(f, '(', 1), r));
+    end loop;
+
+    perform assert(
+      has_function_privilege('service_role', f, 'execute'),
+      format('%s is open to service_role', split_part(f, '(', 1)));
+  end loop;
+
+  raise notice 'grant assertions passed';
+end;
+$$;

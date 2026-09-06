@@ -227,3 +227,47 @@ create policy "own job images"   on public.job_images
   for select using (
     exists (select 1 from public.jobs j where j.id = job_id and j.user_id = auth.uid())
   );
+
+-- ---------------------------------------------------------- function grants --
+
+-- RLS above governs the tables. It does NOT govern these functions: they are
+-- `security definer`, so they run with the owner's rights whoever calls them.
+-- Postgres grants EXECUTE to PUBLIC by default and Supabase exposes the public
+-- schema through PostgREST, which would let any signed-in user call
+--
+--   POST /rest/v1/rpc/refund_credits {"p_user":"<their id>","p_amount":999999}
+--
+-- and mint themselves credits. Only our server, holding the service role, may
+-- call them.
+revoke all on function public.spend_credits(uuid, integer, uuid)  from public;
+revoke all on function public.refund_credits(uuid, integer, uuid) from public;
+revoke all on function public.claim_images(uuid, integer)         from public;
+
+do $$
+declare
+  r text;
+  f text;
+begin
+  foreach r in array array['anon', 'authenticated'] loop
+    if exists (select 1 from pg_roles where rolname = r) then
+      foreach f in array array[
+        'public.spend_credits(uuid, integer, uuid)',
+        'public.refund_credits(uuid, integer, uuid)',
+        'public.claim_images(uuid, integer)'
+      ] loop
+        execute format('revoke all on function %s from %I', f, r);
+      end loop;
+    end if;
+  end loop;
+
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    foreach f in array array[
+      'public.spend_credits(uuid, integer, uuid)',
+      'public.refund_credits(uuid, integer, uuid)',
+      'public.claim_images(uuid, integer)'
+    ] loop
+      execute format('grant execute on function %s to service_role', f);
+    end loop;
+  end if;
+end
+$$;

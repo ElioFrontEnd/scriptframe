@@ -30,6 +30,14 @@ echo "  ok   migration 002 applies on top of it"
 # Applying a migration twice is a normal accident; it must be harmless.
 run -f "$ROOT/supabase/migration-002-custom-styles.sql" >/dev/null
 echo "  ok   migration 002 is safe to re-run"
+run -f "$ROOT/supabase/migration-003-timestamps.sql" >/dev/null
+echo "  ok   migration 003 applies on top of it"
+run -f "$ROOT/supabase/migration-003-timestamps.sql" >/dev/null
+echo "  ok   migration 003 is safe to re-run"
+run -f "$ROOT/supabase/migration-004-purchases.sql" >/dev/null
+echo "  ok   migration 004 applies on top of it"
+run -f "$ROOT/supabase/migration-004-purchases.sql" >/dev/null
+echo "  ok   migration 004 is safe to re-run"
 
 echo
 echo "Function behaviour:"
