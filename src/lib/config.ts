@@ -69,6 +69,10 @@ export const LIMITS = {
   maxJobsPerHour: 20,
   /** Attempts per image before we give up and refund it. */
   maxAttempts: 3,
+  /** Reference images a user may analyse per hour. Cheap, but not free. */
+  maxStyleAnalysesPerHour: 30,
+  /** Longest edge a reference is downscaled to in the browser before upload. */
+  referenceMaxEdge: 1024,
 } as const;
 
 /**

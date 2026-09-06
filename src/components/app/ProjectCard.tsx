@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getStyle } from "@/lib/styles";
+import { resolveJobStyle } from "@/lib/styles";
 import StyleSwatch from "@/components/StyleSwatch";
 import JobStatusChip from "@/components/app/JobStatusChip";
 
@@ -9,6 +9,8 @@ export type ProjectSummary = {
   status: string;
   image_count: number;
   style_id: string;
+  /** Snapshot of the style used. NULL on jobs from before migration 002. */
+  style?: unknown;
   created_at: string;
 };
 
@@ -19,7 +21,7 @@ export default function ProjectCard({
   job: ProjectSummary;
   thumbnail?: string;
 }) {
-  const style = getStyle(job.style_id);
+  const style = resolveJobStyle(job);
 
   return (
     <Link

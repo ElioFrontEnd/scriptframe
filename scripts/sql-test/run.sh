@@ -25,6 +25,11 @@ echo "Loading schema…"
 run -f "$HERE/00-stubs.sql" >/dev/null
 run -f "$ROOT/supabase/schema.sql" >/dev/null
 echo "  ok   supabase/schema.sql loads cleanly"
+run -f "$ROOT/supabase/migration-002-custom-styles.sql" >/dev/null
+echo "  ok   migration 002 applies on top of it"
+# Applying a migration twice is a normal accident; it must be harmless.
+run -f "$ROOT/supabase/migration-002-custom-styles.sql" >/dev/null
+echo "  ok   migration 002 is safe to re-run"
 
 echo
 echo "Function behaviour:"

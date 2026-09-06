@@ -59,6 +59,19 @@ export async function signedImageUrls(
   return map;
 }
 
+/** Where a style's reference image lives. Same private bucket, own prefix. */
+export function referenceKey(userId: string, styleId: string) {
+  return `references/${userId}/${styleId}.jpg`;
+}
+
+export async function deleteImage(key: string) {
+  try {
+    await createAdminClient().storage.from(BUCKET).remove([key]);
+  } catch {
+    // A dangling object is not worth failing a delete over.
+  }
+}
+
 export async function getImageBytes(key: string): Promise<Buffer> {
   const { data, error } = await createAdminClient()
     .storage.from(BUCKET)

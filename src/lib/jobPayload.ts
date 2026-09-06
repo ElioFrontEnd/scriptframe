@@ -18,6 +18,8 @@ export type JobPayload = {
     title: string;
     status: string;
     style_id: string;
+    /** Snapshot of the style used. NULL on jobs from before migration 002. */
+    style: unknown;
     image_count: number;
     credits_spent: number;
     error: string | null;
@@ -40,7 +42,7 @@ export async function loadJobPayload(
 ): Promise<JobPayload | null> {
   const { data: job } = await admin
     .from("jobs")
-    .select("id, title, status, style_id, image_count, credits_spent, error")
+    .select("id, title, status, style_id, style, image_count, credits_spent, error")
     .eq("id", jobId)
     .single();
 

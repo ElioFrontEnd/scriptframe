@@ -28,6 +28,19 @@ const QUESTIONS: Array<{ q: string; a: React.ReactNode }> = [
     ),
   },
   {
+    q: "Can I use my own look instead of a preset?",
+    a: (
+      <>
+        Yes. Upload one image in the style you want and Cutframe describes how
+        it&apos;s made — medium, palette, line quality, lighting — then carries
+        that description through every prompt. The style is saved to your
+        account and reusable on every project, and you can edit the description
+        by hand if it isn&apos;t quite right. It costs the same as a preset,
+        because the reference is read once and never touches the image model.
+      </>
+    ),
+  },
+  {
     q: "Can I edit the prompts before spending anything?",
     a: (
       <>

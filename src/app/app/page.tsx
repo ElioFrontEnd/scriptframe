@@ -12,7 +12,7 @@ export default async function ProjectsPage() {
 
   const { data: jobs } = await supabase
     .from("jobs")
-    .select("id, title, status, image_count, style_id, created_at")
+    .select("id, title, status, image_count, style_id, style, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(60);

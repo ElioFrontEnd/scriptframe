@@ -106,3 +106,56 @@ begin
   raise notice 'all single-session assertions passed';
 end;
 $$;
+
+-- Migration 002: styles made from a customer's own reference image.
+do $$
+declare
+  u uuid := gen_random_uuid();
+  s uuid;
+  j uuid;
+  n integer;
+  snap jsonb;
+begin
+  insert into auth.users (id, email) values (u, 'styles@example.com');
+
+  insert into public.custom_styles (user_id, name, block, guidance, swatch, texture)
+  values (u, 'Soft Gouache', 'soft gouache illustration, chalky matte pigment, no photorealism',
+          'Favour calm domestic scenes.', array['#faf7f2','#b4552d','#6e7f5c'], 'wash')
+  returning id into s;
+
+  select count(*) into n from public.custom_styles where user_id = u;
+  perform assert(n = 1, 'a custom style can be saved');
+
+  -- A job snapshots the style it was made with.
+  insert into public.jobs (user_id, title, script, style_id, style, image_count)
+  values (u, 'test', 'script', s::text,
+          jsonb_build_object('id', s::text, 'name', 'Soft Gouache',
+                             'block', 'soft gouache illustration, chalky matte pigment',
+                             'guidance', '', 'swatch', array['#faf7f2','#b4552d','#6e7f5c'],
+                             'texture', 'wash'),
+          10)
+  returning id into j;
+
+  select style into snap from public.jobs where id = j;
+  perform assert(snap->>'name' = 'Soft Gouache', 'a job stores its style snapshot');
+
+  -- Deleting the style must not disturb jobs already made with it.
+  delete from public.custom_styles where id = s;
+
+  select count(*) into n from public.jobs where id = j;
+  perform assert(n = 1, 'deleting a style leaves its jobs intact');
+
+  select style into snap from public.jobs where id = j;
+  perform assert(snap->>'block' is not null, 'the job keeps its look after the style is deleted');
+
+  -- Styles vanish with their owner.
+  insert into public.custom_styles (user_id, name, block)
+  values (u, 'Another', 'flat vector illustration, no outlines, no texture');
+  delete from auth.users where id = u;
+
+  select count(*) into n from public.custom_styles where user_id = u;
+  perform assert(n = 0, 'styles are removed when the account is');
+
+  raise notice 'custom style assertions passed';
+end;
+$$;

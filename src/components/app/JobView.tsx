@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getStyle } from "@/lib/styles";
+import { resolveJobStyle } from "@/lib/styles";
 import JobStatusChip from "@/components/app/JobStatusChip";
 import FrameDialog from "@/components/app/FrameDialog";
 import FrameCard from "@/components/app/FrameCard";
@@ -119,7 +119,7 @@ export default function JobView({
   }
 
   const { job, images, progress } = data;
-  const style = getStyle(job.style_id);
+  const style = resolveJobStyle(job);
   const isReady = job.status === "prompts_ready";
   const isRunning = job.status === "running";
   const isDone = job.status === "completed";

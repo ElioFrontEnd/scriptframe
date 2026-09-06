@@ -210,6 +210,46 @@ export default async function Home() {
             <div className="mt-12">
               <StyleGallery />
             </div>
+
+            {/* The differentiator: a channel's look shouldn't be shared with
+                every other customer of the same tool. */}
+            <div className="card mt-8 grid gap-8 p-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:items-center">
+              <div>
+                <span className="eyebrow">Or bring your own</span>
+                <h3 className="display mt-3 text-[26px] sm:text-[30px]">
+                  Upload one frame. Get a style only you have.
+                </h3>
+                <p className="mt-4 text-[15.5px] leading-relaxed text-[var(--ink-muted)]">
+                  Drop in a single image in the look you want and Cutframe reads
+                  how it&apos;s made — medium, palette, line quality, lighting —
+                  then writes that description into every prompt of every video
+                  you make. Your channel gets a face nobody else is using.
+                </p>
+                <p className="mt-3 text-[14px] leading-relaxed text-[var(--ink-faint)]">
+                  It describes the technique, never the picture, so your frames
+                  are your own scenes rather than variations of the reference.
+                  Costs the same as a preset.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex h-24 w-32 shrink-0 items-center justify-center rounded-[10px] border border-dashed border-[var(--line-strong)] bg-[var(--paper-sunk)] text-center text-[12px] leading-tight text-[var(--ink-faint)]">
+                  your
+                  <br />
+                  reference
+                </div>
+                <span className="text-[20px] text-[var(--ink-faint)]" aria-hidden="true">
+                  →
+                </span>
+                <div className="min-w-0 rounded-[10px] border border-[var(--line)] bg-[var(--paper-sunk)] p-3">
+                  <p className="font-mono text-[11px] leading-relaxed text-[var(--ink-muted)]">
+                    soft gouache illustration, chalky matte pigment, visible
+                    brush texture, muted sage and clay palette, gentle diffused
+                    light, no photorealism, no gradients…
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

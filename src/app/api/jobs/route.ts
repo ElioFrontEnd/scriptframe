@@ -2,21 +2,51 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser, fail } from "@/lib/api";
 import { generatePrompts } from "@/lib/prompts";
-import { getStyle, STYLE_PRESETS } from "@/lib/styles";
+import { getStyle, asResolvedStyle, STYLE_PRESETS, type ResolvedStyle } from "@/lib/styles";
 import { LIMITS, estimateImageCount } from "@/lib/config";
+import type { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 120;
 
-const Body = z.object({
-  title: z.string().trim().max(120).optional(),
-  script: z.string().trim().min(50).max(LIMITS.maxScriptChars),
-  styleId: z.enum(
-    STYLE_PRESETS.map((s) => s.id) as [string, ...string[]],
-  ),
-  density: z.string().default("standard"),
-  /** Optional override; still clamped to the hard ceiling below. */
-  imageCount: z.number().int().optional(),
-});
+const PRESET_IDS = STYLE_PRESETS.map((s) => s.id);
+
+const Body = z
+  .object({
+    title: z.string().trim().max(120).optional(),
+    script: z.string().trim().min(50).max(LIMITS.maxScriptChars),
+    /** A built-in preset. */
+    styleId: z.string().optional(),
+    /** A style the user made from their own reference image. */
+    customStyleId: z.string().uuid().optional(),
+    density: z.string().default("standard"),
+    /** Optional override; still clamped to the hard ceiling below. */
+    imageCount: z.number().int().optional(),
+  })
+  .refine((d) => d.styleId || d.customStyleId, {
+    message: "Pick a style first",
+  });
+
+/** Resolves whichever kind of style was chosen, checking ownership for custom ones. */
+async function resolveRequestedStyle(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  body: { styleId?: string; customStyleId?: string },
+): Promise<ResolvedStyle | null> {
+  if (body.customStyleId) {
+    const { data } = await admin
+      .from("custom_styles")
+      .select("id, name, block, guidance, swatch, texture")
+      .eq("id", body.customStyleId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    return data ? asResolvedStyle(data) : null;
+  }
+
+  return body.styleId && PRESET_IDS.includes(body.styleId)
+    ? getStyle(body.styleId)
+    : null;
+}
 
 /**
  * Creates a job and writes its prompts.
@@ -34,7 +64,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return fail(parsed.error.issues[0]?.message ?? "Invalid request");
   }
-  const { title, script, styleId, density } = parsed.data;
+  const { title, script, density } = parsed.data;
 
   // Rate limit before doing any paid work.
   const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
@@ -48,6 +78,9 @@ export async function POST(request: Request) {
     return fail("Too many projects in the last hour. Try again shortly.", 429);
   }
 
+  const style = await resolveRequestedStyle(admin, user.id, parsed.data);
+  if (!style) return fail("That style isn't available", 400);
+
   const imageCount = Math.min(
     LIMITS.maxImagesPerJob,
     Math.max(
@@ -56,8 +89,6 @@ export async function POST(request: Request) {
     ),
   );
 
-  const style = getStyle(styleId);
-
   const { data: job, error: insertError } = await admin
     .from("jobs")
     .insert({
@@ -65,6 +96,9 @@ export async function POST(request: Request) {
       title: title || script.trim().slice(0, 60).replace(/\s+\S*$/, "") || "Untitled",
       script,
       style_id: style.id,
+      // Snapshot, so this job keeps its look even if the style is later edited
+      // or deleted. Everything that displays a job reads this.
+      style,
       image_count: imageCount,
       status: "draft",
     })

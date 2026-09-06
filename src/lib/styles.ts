@@ -202,15 +202,15 @@ export const STYLE_PRESETS: StylePreset[] = [
     blurb: "Stop-motion plasticine. Quirky humour, kids, offbeat storytelling.",
     swatch: ["#F0DCC4", "#C25B4E", "#5C8C7B"],
     block:
-      "stop-motion animation still of handmade plasticine models, " +
-      "everything visibly sculpted from modelling clay with fingerprints, seams and sculpting tool marks pressed into the surface, " +
-      "lumpy uneven hand-formed shapes with a soft waxy matte sheen, " +
-      "characters with chunky simplified clay bodies, stubby limbs and small bead eyes, " +
-      "miniature handcrafted tabletop set with sculpted clay terrain and a painted cardboard backdrop, " +
-      "warm practical studio lighting, macro lens on a small diorama, " +
-      "bright friendly palette of putty, brick red and sage, " +
-      "no photorealism, no real human skin, no real landscape or sky, no CGI smoothness, " +
-      "no live action, no photograph, no flat illustration, no text",
+      "stop-motion animation frame in which every single object is handmade from modelling clay, " +
+      "the ground, the rocks, the hills and the painted backdrop are all lumpy sculpted plasticine, " +
+      "thick fingerprints, seams, squashed edges and sculpting tool marks pressed into every surface, " +
+      "thumb-shaped bumps and uneven hand-rolled forms throughout, matte waxy clay sheen catching the light, " +
+      "characters built from chunky clay lumps with stubby limbs, flat feet and small pressed bead eyes, " +
+      "obvious tabletop diorama scale, flat even studio lighting with the whole small set visible, " +
+      "bright putty, brick red and sage clay colours, " +
+      "no real rock, no real sky, no photographic landscape, no realistic skin or fabric, " +
+      "no depth of field haze, no photorealism, no CGI, no live action, no flat illustration, no text",
     guidance:
       "Favour small tabletop scenes with one or two clay characters and simple handmade props. " +
       "Keep everything close, miniature and obviously built by hand.",

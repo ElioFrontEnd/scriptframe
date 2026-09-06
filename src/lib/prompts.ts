@@ -1,5 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
-import type { StylePreset } from "./styles";
+import { generateJson, parseJson } from "./gemini";
+import type { ResolvedStyle } from "./styles";
 
 /**
  * Turns a narration script into one image prompt per beat.
@@ -14,28 +14,6 @@ import type { StylePreset } from "./styles";
  *     degrades near the end; chunks of a few hundred words each stay sharp and
  *     run in parallel.
  */
-
-/**
- * Models are tried in order until one answers, and the winner is remembered for
- * the rest of the process. Google retires model names on their own schedule —
- * this list means that costs you a fallback rather than an outage. Set
- * GEMINI_MODEL in the environment to force a specific one.
- *
- * Ordered cheapest first. Prompt writing is a mechanical, well-specified task,
- * so the light models handle it fine; at these sizes the whole step costs about
- * a cent per video either way, next to roughly 30 cents of image generation.
- */
-const MODEL_CANDIDATES = [
-  process.env.GEMINI_MODEL,
-  "gemini-3.1-flash-lite",
-  "gemini-3.5-flash-lite",
-  "gemini-3.6-flash",
-  "gemini-3.7-flash",
-  "gemini-3.8-flash",
-].filter((m): m is string => !!m);
-
-/** Set once we know which candidate this API key can actually reach. */
-let resolvedModel: string | null = null;
 
 const WORDS_PER_CHUNK = 700;
 
@@ -122,7 +100,7 @@ export function allocate(chunks: string[], total: number): number[] {
   return counts;
 }
 
-function buildInstruction(style: StylePreset, count: number, chunk: string) {
+function buildInstruction(style: ResolvedStyle, count: number, chunk: string) {
   return `You are a storyboard artist for a narrated explainer video.
 
 Below is a section of the narration script. Break it into exactly ${count} sequential visual beats, in order, covering the whole section evenly. For each beat write a single image description.
@@ -151,12 +129,7 @@ ${chunk}
 type Shot = { beat: string; scene: string };
 
 function parseShots(raw: string): Shot[] {
-  let text = raw.trim();
-  // Models occasionally wrap JSON in a fence despite the mime type.
-  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fence) text = fence[1].trim();
-
-  const parsed = JSON.parse(text) as { shots?: Shot[] };
+  const parsed = parseJson<{ shots?: Shot[] }>(raw);
   if (!parsed.shots || !Array.isArray(parsed.shots)) {
     throw new Error("Prompt writer returned no shots");
   }
@@ -178,62 +151,21 @@ function fit(shots: Shot[], count: number, fallbackBeat: string): Shot[] {
   return out;
 }
 
-/** A model name that isn't available to this key — worth trying the next one. */
-function isModelUnavailable(err: unknown): boolean {
-  const text = err instanceof Error ? err.message : String(err);
-  return (
-    text.includes("404") ||
-    text.includes("NOT_FOUND") ||
-    text.includes("no longer available") ||
-    text.includes("is not found") ||
-    text.includes("does not have access")
-  );
-}
-
-async function callModel(ai: GoogleGenAI, instruction: string): Promise<string> {
-  // Once one works, stop probing.
-  const candidates = resolvedModel ? [resolvedModel] : MODEL_CANDIDATES;
-  let lastError: unknown;
-
-  for (const model of candidates) {
-    try {
-      const res = await ai.models.generateContent({
-        model,
-        contents: instruction,
-        config: {
-          temperature: 0.8,
-          responseMimeType: "application/json",
-          responseJsonSchema: RESPONSE_SCHEMA,
-        },
-      });
-      resolvedModel = model;
-      return res.text ?? "";
-    } catch (err) {
-      lastError = err;
-      // A real failure (rate limit, bad key, server error) shouldn't send us
-      // marching down the list — only a missing model should.
-      if (!isModelUnavailable(err)) throw err;
-    }
-  }
-
-  throw new Error(
-    `No usable Gemini model. Tried ${candidates.join(", ")}. Last error: ${
-      lastError instanceof Error ? lastError.message : String(lastError)
-    }`,
-  );
-}
-
 async function generateChunk(
-  ai: GoogleGenAI,
   chunk: string,
   count: number,
-  style: StylePreset,
+  style: ResolvedStyle,
 ): Promise<Shot[]> {
   let lastError: unknown;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const shots = parseShots(await callModel(ai, buildInstruction(style, count, chunk)));
+      const raw = await generateJson({
+        parts: [{ text: buildInstruction(style, count, chunk) }],
+        schema: RESPONSE_SCHEMA,
+        temperature: 0.8,
+      });
+      const shots = parseShots(raw);
       if (shots.length === 0) throw new Error("empty");
       return fit(shots, count, chunk);
     } catch (err) {
@@ -252,13 +184,8 @@ async function generateChunk(
 export async function generatePrompts(opts: {
   script: string;
   imageCount: number;
-  style: StylePreset;
+  style: ResolvedStyle;
 }): Promise<GeneratedPrompt[]> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
-
-  const ai = new GoogleGenAI({ apiKey });
-
   let chunks = splitIntoChunks(opts.script, WORDS_PER_CHUNK);
 
   // Every chunk yields at least one prompt, so more chunks than images would
@@ -278,7 +205,7 @@ export async function generatePrompts(opts: {
   const results = await Promise.all(
     chunks.map((chunk, i) =>
       counts[i] > 0
-        ? generateChunk(ai, chunk, counts[i], opts.style)
+        ? generateChunk(chunk, counts[i], opts.style)
         : Promise.resolve([] as Shot[]),
     ),
   );
