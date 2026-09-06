@@ -187,6 +187,13 @@ export default function PreviewPage() {
       </Section>
 
       <Section
+        title="Credit packs, arriving from the pricing table"
+        note="What someone sees after clicking Get Creator on the landing page and signing in."
+      >
+        <BuyCredits preselect="creator" />
+      </Section>
+
+      <Section
         title="New project"
         note="Paste a timestamped transcript into the script box — the timing panel and the seconds-per-image slider replace the pacing buttons."
       >

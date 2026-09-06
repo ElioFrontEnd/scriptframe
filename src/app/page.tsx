@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import SignInForm from "@/components/SignInForm";
 import Nav from "@/components/marketing/Nav";
@@ -302,17 +303,30 @@ export default async function Home() {
                     <p className="mt-1 text-[14px] text-[var(--ink-muted)]">
                       {pack.videos}
                     </p>
-                    <a href="#start" className="btn-secondary mt-7 w-full">
-                      Start free
-                    </a>
+                    {/* Signed-in visitors are redirected to /app above, so
+                        this always goes through sign-in first. Saying so beats
+                        a button that looks like it charges the card and
+                        doesn't. */}
+                    <Link
+                      href={`/signin?next=${encodeURIComponent(
+                        `/app/billing?pack=${pack.id}`,
+                      )}&pack=${pack.id}`}
+                      className={`mt-7 w-full text-center ${
+                        featured ? "btn-primary" : "btn-secondary"
+                      }`}
+                    >
+                      Get {pack.name}
+                    </Link>
                   </div>
                 );
               })}
             </div>
 
             <p className="mt-6 text-[13.5px] text-[var(--ink-faint)]">
-              Every account starts with 40 free images — enough for a short video
-              — so you can see the output before paying for anything.
+              Every account starts with 40 free images — enough for a short
+              video — so you can see the output before paying for anything.
+              Packs are bought from inside your account, so you&apos;ll sign in
+              first either way.
             </p>
           </div>
         </section>

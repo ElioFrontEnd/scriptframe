@@ -17,6 +17,8 @@ const OUT = process.argv[3] ?? "/tmp/shots";
 
 const PAGES = [
   { path: "/", name: "landing", full: true },
+  { path: "/signin", name: "signin", full: false },
+  { path: "/signin?pack=creator", name: "signin-pack", full: false },
   { path: "/terms", name: "terms", full: false },
   { path: "/privacy", name: "privacy", full: false },
   { path: "/dev/preview", name: "preview-app", full: true },

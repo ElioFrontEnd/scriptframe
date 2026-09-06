@@ -10,23 +10,31 @@ export default function Nav() {
         </Link>
 
         <nav className="hidden items-center gap-7 text-[14px] text-[var(--ink-muted)] md:flex">
-          <a className="transition-colors hover:text-[var(--ink)]" href="#how">
+          <Link className="transition-colors hover:text-[var(--ink)]" href="/#how">
             How it works
-          </a>
-          <a className="transition-colors hover:text-[var(--ink)]" href="#styles">
+          </Link>
+          <Link className="transition-colors hover:text-[var(--ink)]" href="/#styles">
             Styles
-          </a>
-          <a className="transition-colors hover:text-[var(--ink)]" href="#pricing">
+          </Link>
+          <Link className="transition-colors hover:text-[var(--ink)]" href="/#pricing">
             Pricing
-          </a>
-          <a className="transition-colors hover:text-[var(--ink)]" href="#faq">
+          </Link>
+          <Link className="transition-colors hover:text-[var(--ink)]" href="/#faq">
             FAQ
-          </a>
+          </Link>
         </nav>
 
-        <a href="#start" className="btn-primary btn-sm ml-auto">
-          Start free
-        </a>
+        <div className="ml-auto flex items-center gap-4">
+          <Link
+            href="/signin"
+            className="text-[14px] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
+          >
+            Sign in
+          </Link>
+          <Link href="/signin" className="btn-primary btn-sm">
+            Start free
+          </Link>
+        </div>
       </div>
     </header>
   );

@@ -16,7 +16,7 @@ const REASONS: Record<string, string> = {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string; cancelled?: string }>;
+  searchParams: Promise<{ paid?: string; cancelled?: string; pack?: string }>;
 }) {
   const params = await searchParams;
   const user = await requireUserPage();
@@ -68,9 +68,11 @@ export default async function BillingPage({
         </Link>
       </div>
 
-      <h2 className="mt-12 text-[15px] font-medium">Buy more</h2>
+      <h2 id="buy" className="mt-12 scroll-mt-24 text-[15px] font-medium">
+        Buy more
+      </h2>
       <div className="mt-4">
-        <BuyCredits />
+        <BuyCredits preselect={params.pack} />
       </div>
 
       {!!history?.length && (

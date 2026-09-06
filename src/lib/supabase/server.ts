@@ -47,7 +47,9 @@ export async function getUser() {
  */
 export async function requireUserPage() {
   const user = await getUser();
-  if (!user) redirect("/");
+  // Straight to the sign-in form rather than the marketing page — someone who
+  // followed a link into the app wants to get in, not read the pitch again.
+  if (!user) redirect("/signin");
   return user;
 }
 
