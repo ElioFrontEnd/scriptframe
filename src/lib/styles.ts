@@ -106,14 +106,18 @@ export const STYLE_PRESETS: StylePreset[] = [
     blurb: "Modern animated feature look. Fables, kids' stories, what-ifs.",
     swatch: ["#8FD3E8", "#F2A65A", "#3E7C59"],
     block:
-      "modern 3D animated feature film still, smooth subsurface-scattered surfaces, " +
-      "soft global illumination with warm bounce light and gentle rim lighting, " +
-      "rounded stylised character design with large expressive eyes and simplified proportions, " +
-      "bright saturated but harmonious palette, shallow depth of field with soft bokeh, " +
-      "clean polished render, appealing readable silhouettes, " +
-      "no photorealism, no live action, no rough textures, no dark gritty tone, no text",
+      "stylised 3D cartoon animation still, non-photorealistic CG render, " +
+      "characters with deliberately exaggerated cartoon proportions, oversized head, " +
+      "large round glossy eyes, stubby simplified hands and chunky rounded body shapes, " +
+      "smooth matte toy-like surfaces with a soft waxy sheen and gentle subsurface glow, " +
+      "every edge rounded and softened, bright saturated candy colour palette, " +
+      "soft studio global illumination with warm bounce light and gentle rim light, " +
+      "shallow depth of field, clean polished animated-film render, " +
+      "no photorealism, no realistic human anatomy or faces, no photographic skin or fabric texture, " +
+      "no live action, no film still, no gritty realism, no text",
     guidance:
-      "Favour expressive characters, animals and colourful environments. Keep one clear subject per frame.",
+      "Favour one exaggerated cartoon character or animal in a simplified colourful setting. " +
+      "Describe people as cartoon characters, never as realistic humans.",
   },
   {
     id: "anime-still",
@@ -198,14 +202,18 @@ export const STYLE_PRESETS: StylePreset[] = [
     blurb: "Stop-motion plasticine. Quirky humour, kids, offbeat storytelling.",
     swatch: ["#F0DCC4", "#C25B4E", "#5C8C7B"],
     block:
-      "stop-motion claymation still, handmade plasticine models with visible thumbprints and tool marks, " +
-      "slightly uneven lumpy surfaces with a soft matte sheen, " +
-      "warm practical studio lighting with soft shadows on a small handcrafted set, " +
-      "bright friendly palette of putty, brick red and sage, shallow depth of field like a macro lens on a miniature, " +
-      "chunky simplified character shapes with big eyes, " +
-      "no photorealism, no CGI smoothness, no flat illustration, no text",
+      "stop-motion animation still of handmade plasticine models, " +
+      "everything visibly sculpted from modelling clay with fingerprints, seams and sculpting tool marks pressed into the surface, " +
+      "lumpy uneven hand-formed shapes with a soft waxy matte sheen, " +
+      "characters with chunky simplified clay bodies, stubby limbs and small bead eyes, " +
+      "miniature handcrafted tabletop set with sculpted clay terrain and a painted cardboard backdrop, " +
+      "warm practical studio lighting, macro lens on a small diorama, " +
+      "bright friendly palette of putty, brick red and sage, " +
+      "no photorealism, no real human skin, no real landscape or sky, no CGI smoothness, " +
+      "no live action, no photograph, no flat illustration, no text",
     guidance:
-      "Favour small sets, single characters and props at close range. Keep the world miniature and tactile.",
+      "Favour small tabletop scenes with one or two clay characters and simple handmade props. " +
+      "Keep everything close, miniature and obviously built by hand.",
   },
   {
     id: "flat-editorial",
@@ -229,13 +237,16 @@ export const STYLE_PRESETS: StylePreset[] = [
     blurb: "Pen on paper. Study, science, how-things-work, explainers.",
     swatch: ["#F6F1E4", "#2F4C6B", "#C46A33"],
     block:
-      "hand-drawn ballpoint and coloured pencil doodle on lined off-white notebook paper, " +
-      "loose confident blue-black pen linework with slightly wobbly edges, " +
-      "quick scribbled pencil hatching for shadow, a few flat highlighter-like colour washes, " +
-      "hand-lettered labels and arrows, small margin sketches, visible paper grain and faint rule lines, " +
-      "no photorealism, no 3D render, no clean vector shapes, no gradients, no digital polish",
+      "hand-drawn blue biro doodle on lined school notebook paper, " +
+      "scratchy ballpoint pen linework with visible over-drawn strokes and dark ink build-up at the corners, " +
+      "printed horizontal rule lines and a red vertical margin line clearly showing through the drawing, " +
+      "quick coloured pencil scribble fill that overshoots the outlines and leaves white gaps, " +
+      "hand-lettered capital labels and hand-drawn arrows, doodles in the margin, " +
+      "smudges, eraser marks and a slight page curl, flat naive perspective, " +
+      "no photorealism, no clean vector shapes, no smooth gradients, no painterly rendering, " +
+      "no faint pencil sketching, no digital polish",
     guidance:
-      "Favour diagrams, cross-sections, labelled parts, simple figures and step sequences.",
+      "Favour diagrams, cross-sections, labelled parts, simple figures and step sequences drawn plainly.",
   },
 ];
 

@@ -20,6 +20,16 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { createFalClient } from "@fal-ai/client";
+import sharp from "sharp";
+
+/**
+ * Previews are display assets, not deliverables. fal returns roughly 700KB per
+ * frame; twelve of those is 8MB on a landing page, which is a real cost on a
+ * phone. Resized to 900px and re-encoded they land around 35KB each with no
+ * visible difference at the size they are shown.
+ */
+const PREVIEW_WIDTH = 900;
+const PREVIEW_QUALITY = 78;
 
 /** Neutral enough for every medium, with a figure, a landscape and a light source. */
 const SCENE =
@@ -117,11 +127,16 @@ for (const preset of todo) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`download failed: HTTP ${res.status}`);
 
-    writeFileSync(
-      join(OUT, `${preset.id}.jpg`),
-      Buffer.from(await res.arrayBuffer()),
+    const original = Buffer.from(await res.arrayBuffer());
+    const optimised = await sharp(original)
+      .resize({ width: PREVIEW_WIDTH })
+      .jpeg({ quality: PREVIEW_QUALITY, mozjpeg: true })
+      .toBuffer();
+
+    writeFileSync(join(OUT, `${preset.id}.jpg`), optimised);
+    console.log(
+      `ok  (${Math.round(original.length / 1024)}KB -> ${Math.round(optimised.length / 1024)}KB)`,
     );
-    console.log("ok");
   } catch (err) {
     failures++;
     console.log(`FAILED — ${err instanceof Error ? err.message : String(err)}`);
