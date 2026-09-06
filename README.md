@@ -9,6 +9,13 @@ writing a self-contained prompt for each one, holding a single look across a
 hundred images, and handing back a numbered ZIP that drops straight into a
 timeline.
 
+A customer can pick one of twelve presets or upload a single reference image and
+get a style of their own. The reference is read once by a vision model, which
+writes the same kind of style description the presets use; nothing about
+generation changes, so the price per frame is identical either way. See
+`src/lib/styleAnalysis.ts` for why it is done that way rather than with
+image-conditioned generation.
+
 Live at **cutframe.app**.
 
 ---
@@ -33,9 +40,12 @@ setup guide. The short version of what has to exist:
 | `CRON_SECRET` | Any long random string you choose |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Optional — enables "your set is ready" emails |
 
-Run `supabase/schema.sql` in the Supabase SQL editor once. It creates the
-tables, the row-level security policies, the private `images` storage bucket,
-and the credit functions.
+Run these in the Supabase SQL editor once each, in order:
+
+1. `supabase/schema.sql` — tables, row-level security, the private `images`
+   bucket, and the credit functions.
+2. `supabase/migration-002-custom-styles.sql` — styles made from a customer's
+   own reference image. Additive and safe to re-run.
 
 ---
 
@@ -131,7 +141,9 @@ src/components/
 
 src/lib/
   styles.ts                    the style presets — the actual differentiator
-  prompts.ts                   script -> per-beat prompts (chunked, parallel, model fallback)
+  gemini.ts                    shared model access with retirement fallback
+  prompts.ts                   script -> per-beat prompts (chunked, parallel)
+  styleAnalysis.ts             reference image -> style block
   fal.ts                       image generation, server-only
   storage.ts                   images in Supabase Storage, private + signed URLs
   runner.ts                    batch worker: claims, retries, refunds, completion
@@ -141,6 +153,7 @@ src/lib/
   samples.ts                   landing-page gallery, reads public/samples
 
 supabase/schema.sql            tables, RLS, atomic credit functions
+supabase/migration-002-*.sql   custom styles and the per-job style snapshot
 scripts/                       tests, screenshots, sample loading, OG image
 ```
 

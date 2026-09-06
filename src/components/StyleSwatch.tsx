@@ -41,6 +41,14 @@ function texture(kind: StylePreset["texture"], ink: string) {
       return {
         backgroundImage: `linear-gradient(to top, ${ink}30, transparent 65%)`,
       };
+    case "gloss": // soft specular sheen
+      return {
+        backgroundImage: `radial-gradient(circle at 32% 26%, #ffffff5c, transparent 42%)`,
+      };
+    case "cel": // hard-edged shadow shape
+      return {
+        backgroundImage: `linear-gradient(118deg, transparent 46%, ${ink}22 46%)`,
+      };
     case "flat":
     default:
       return {};
@@ -51,7 +59,8 @@ export default function StyleSwatch({
   style,
   className = "",
 }: {
-  style: StylePreset;
+  /** Any style — a preset or one made from a customer's reference image. */
+  style: Pick<StylePreset, "swatch" | "texture">;
   className?: string;
 }) {
   const [ground, mid, accent] = style.swatch;

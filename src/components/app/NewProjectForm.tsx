@@ -2,15 +2,30 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { STYLE_PRESETS, DEFAULT_STYLE_ID } from "@/lib/styles";
+import { DEFAULT_STYLE_ID } from "@/lib/styles";
 import { DENSITY_OPTIONS, estimateImageCount, LIMITS } from "@/lib/config";
-import StyleSwatch from "@/components/StyleSwatch";
+import StylePicker, {
+  type CustomStyle,
+  type StyleChoice,
+} from "@/components/app/StylePicker";
 
-export default function NewProjectForm({ credits }: { credits: number }) {
+export default function NewProjectForm({
+  credits,
+  customStyles,
+  previews,
+}: {
+  credits: number;
+  customStyles: CustomStyle[];
+  /** Rendered preset previews by style id; empty until they've been generated. */
+  previews: Record<string, string>;
+}) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [script, setScript] = useState("");
-  const [styleId, setStyleId] = useState<string>(DEFAULT_STYLE_ID);
+  const [style, setStyle] = useState<StyleChoice>({
+    kind: "preset",
+    id: DEFAULT_STYLE_ID,
+  });
   const [density, setDensity] = useState("standard");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -37,7 +52,14 @@ export default function NewProjectForm({ credits }: { credits: number }) {
       const res = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, script, styleId, density }),
+        body: JSON.stringify({
+          title,
+          script,
+          density,
+          ...(style.kind === "preset"
+            ? { styleId: style.id }
+            : { customStyleId: style.id }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
@@ -51,7 +73,7 @@ export default function NewProjectForm({ credits }: { credits: number }) {
   return (
     <form
       onSubmit={submit}
-      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start"
+      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start"
     >
       {/* -------------------------------------------------------- script */}
       <div className="space-y-6">
@@ -95,33 +117,12 @@ export default function NewProjectForm({ credits }: { credits: number }) {
 
       {/* ------------------------------------------------------ settings */}
       <div className="space-y-6 lg:sticky lg:top-24">
-        <div>
-          <span className="label">Style</span>
-          <div className="grid grid-cols-2 gap-2.5">
-            {STYLE_PRESETS.map((s) => {
-              const selected = styleId === s.id;
-              return (
-                <button
-                  type="button"
-                  key={s.id}
-                  onClick={() => setStyleId(s.id)}
-                  aria-pressed={selected}
-                  title={s.blurb}
-                  className={`overflow-hidden rounded-[10px] border text-left transition-all duration-150 ${
-                    selected
-                      ? "border-[var(--clay)] shadow-[var(--lift-1)] ring-1 ring-[var(--clay)]"
-                      : "border-[var(--line)] hover:border-[var(--line-strong)]"
-                  }`}
-                >
-                  <StyleSwatch style={s} className="aspect-[16/9] w-full" />
-                  <span className="block px-2.5 py-2 text-[12.5px] font-medium leading-tight">
-                    {s.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <StylePicker
+          value={style}
+          onChange={(choice) => setStyle(choice)}
+          initialCustom={customStyles}
+          previews={previews}
+        />
 
         <div>
           <span className="label">Pacing</span>

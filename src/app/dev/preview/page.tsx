@@ -36,7 +36,7 @@ const JOBS: ProjectSummary[] = [
     title: "The eruption that starved Europe",
     status: "completed",
     image_count: 96,
-    style_id: "handdrawn-educational",
+    style_id: "classical-oil",
     created_at: "2026-09-04T10:00:00Z",
   },
   {
@@ -44,7 +44,7 @@ const JOBS: ProjectSummary[] = [
     title: "Why the Mediterranean once ran dry",
     status: "running",
     image_count: 74,
-    style_id: "natural-documentary",
+    style_id: "cinematic-realism",
     created_at: "2026-09-05T09:00:00Z",
   },
   {
@@ -52,7 +52,7 @@ const JOBS: ProjectSummary[] = [
     title: "Five habits that quietly age you",
     status: "prompts_ready",
     image_count: 62,
-    style_id: "storybook-watercolor",
+    style_id: "storybook-watercolour",
     created_at: "2026-09-05T11:00:00Z",
   },
   {
@@ -60,7 +60,7 @@ const JOBS: ProjectSummary[] = [
     title: "The night the sky turned red",
     status: "failed",
     image_count: 40,
-    style_id: "cinematic-dark",
+    style_id: "dark-fantasy",
     created_at: "2026-09-03T08:00:00Z",
   },
 ];

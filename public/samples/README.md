@@ -2,8 +2,8 @@
 
 Drop real Cutframe output in here, one folder per style id:
 
-    public/samples/handdrawn-educational/01.jpg
-    public/samples/handdrawn-educational/02.jpg
+    public/samples/classical-oil/01.jpg
+    public/samples/classical-oil/02.jpg
     ...
 
 The landing-page gallery picks them up on the next build. A style with no
@@ -12,7 +12,7 @@ deliberate.
 
 The easy way, after downloading a job's ZIP and unzipping it:
 
-    node scripts/add-samples.mjs "C:\Users\Pozitron\Downloads\my-video" handdrawn-educational
+    node scripts/add-samples.mjs "C:\Users\Pozitron\Downloads\my-video" classical-oil
 
 Pick a run of consecutive frames rather than the six prettiest ones — the claim
 being made is that a whole set holds one look, and consecutive frames prove it.

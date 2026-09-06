@@ -14,7 +14,9 @@
     "db:start": "bash scripts/sql-test/server.sh start",
     "db:stop": "bash scripts/sql-test/server.sh stop",
     "shots": "node scripts/shoot.mjs",
-    "models": "tsx scripts/list-models.ts"
+    "models": "tsx scripts/list-models.ts",
+    "test:styles": "tsx scripts/check-styles.ts",
+    "previews": "node scripts/make-style-previews.mjs"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",

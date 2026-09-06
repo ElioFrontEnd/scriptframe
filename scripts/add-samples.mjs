@@ -18,14 +18,18 @@ import { existsSync, mkdirSync, readdirSync, copyFileSync, rmSync } from "node:f
 import { join, extname, basename } from "node:path";
 
 const STYLE_IDS = [
-  "handdrawn-educational",
-  "archival-documentary",
-  "cinematic-dark",
-  "flat-vector-explainer",
-  "storybook-watercolor",
-  "retro-comic",
-  "natural-documentary",
-  "chalkboard-science",
+  "stickman-whiteboard",
+  "classical-oil",
+  "cinematic-realism",
+  "animated-3d",
+  "anime-still",
+  "dark-fantasy",
+  "comic-panel",
+  "storybook-watercolour",
+  "vintage-engraving",
+  "claymation",
+  "flat-editorial",
+  "notebook-doodle",
 ];
 
 const [source, styleId, howManyRaw] = process.argv.slice(2);

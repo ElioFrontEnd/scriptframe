@@ -1,5 +1,6 @@
 import { STYLE_PRESETS } from "@/lib/styles";
 import { getSampleImages } from "@/lib/samples";
+import { getStylePreview } from "@/lib/previews";
 import StyleSwatch from "@/components/StyleSwatch";
 
 /**
@@ -11,6 +12,7 @@ export default function StyleGallery() {
   const styles = STYLE_PRESETS.map((s) => ({
     ...s,
     images: getSampleImages(s.id, 3),
+    preview: getStylePreview(s.id),
   }));
 
   return (
@@ -33,6 +35,14 @@ export default function StyleGallery() {
                 />
               ))}
             </div>
+          ) : style.preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={style.preview}
+              alt={`Example frame in the ${style.name} style`}
+              loading="lazy"
+              className="aspect-[16/10] w-full bg-[var(--paper-sunk)] object-cover"
+            />
           ) : (
             <StyleSwatch style={style} className="aspect-[16/10] w-full" />
           )}
