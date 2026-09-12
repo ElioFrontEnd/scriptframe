@@ -14,7 +14,16 @@ export default function TermsPage() {
       title="Terms of Service"
       intro="Plain terms for a small product. If anything here is unclear, email us and we'll explain it rather than hide behind it."
     >
-      <Clause heading="What Cutframe does">
+      <Clause heading="Who we are and what Cutframe does">
+        <p>
+          Cutframe is operated by {LEGAL.operator}, a sole trader based in{" "}
+          {LEGAL.jurisdiction}. Questions about these terms, your account or a
+          charge go to{" "}
+          <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>
+            {SUPPORT_EMAIL}
+          </a>
+          , and a real person answers them.
+        </p>
         <p>
           Cutframe takes a narration script you provide, writes image prompts
           from it, and generates images using third-party AI models. You buy

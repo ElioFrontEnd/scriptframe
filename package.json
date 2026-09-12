@@ -16,7 +16,12 @@
     "shots": "node scripts/shoot.mjs",
     "models": "tsx scripts/list-models.ts",
     "test:styles": "tsx scripts/check-styles.ts",
-    "previews": "node scripts/make-style-previews.mjs"
+    "previews": "node scripts/make-style-previews.mjs",
+    "test:transcript": "tsx scripts/check-transcript.ts",
+    "test:auth": "tsx scripts/check-auth.ts",
+    "test:stripe": "node scripts/check-stripe.mjs",
+    "test": "npm run check && npm run lint && npm run test:transcript && npm run test:auth && npm run test:styles && npm run test:math",
+    "samples": "tsx scripts/make-samples.ts"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
@@ -39,6 +44,7 @@
     "eslint-config-next": "16.3.4",
     "sharp": "^0.35.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

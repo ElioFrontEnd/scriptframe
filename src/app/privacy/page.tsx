@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import LegalLayout, { Clause } from "@/components/marketing/LegalLayout";
-import { SUBPROCESSORS } from "@/lib/legal";
+import { LEGAL, SUBPROCESSORS } from "@/lib/legal";
 import { SUPPORT_EMAIL } from "@/lib/config";
 
 export const metadata: Metadata = {
@@ -14,6 +14,19 @@ export default function PrivacyPage() {
       title="Privacy Policy"
       intro="Short version: we collect your email so you can sign in, we store the scripts and images you make so you can come back to them, and we hand your script to an AI provider to do the work. Nothing is sold, and nothing trains a model."
     >
+      <Clause heading="Who controls your data">
+        <p>
+          Cutframe is operated by {LEGAL.operator}, a sole trader based in{" "}
+          {LEGAL.jurisdiction}, who is the data controller for everything
+          described here. To ask what we hold about you, or to have it deleted,
+          email{" "}
+          <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>
+            {SUPPORT_EMAIL}
+          </a>
+          .
+        </p>
+      </Clause>
+
       <Clause heading="What we collect">
         <p>
           <strong className="font-medium text-[var(--ink)]">

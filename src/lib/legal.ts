@@ -1,21 +1,18 @@
 /**
  * Details the legal pages need.
  *
- * `operator` and `jurisdiction` are the two things only Elio can fill in, and
- * both should be set before taking real money — Stripe asks for a legal entity
- * during verification, and whatever it registers should match what these pages
- * say. Until then the pages read as operated by "Cutframe", which is accurate
- * for a sole trader but vague.
+ * `operator` is the person legally behind the service and must match whatever
+ * the payment provider verifies during onboarding — a mismatch between the site
+ * and the merchant record is a standard reason for an application to be held up.
  *
  * These pages are a reasonable, honest starting point written to match what the
  * service actually does. They are not legal advice, and a lawyer should look at
  * them before the business is anything more than small.
  */
 export const LEGAL = {
-  operator: "Cutframe",
-  /** e.g. "Germany" / "England and Wales". Set this before launch. */
-  jurisdiction: "the operator's country of residence",
-  lastUpdated: "5 September 2026",
+  operator: "Elio Hyziu",
+  jurisdiction: "Albania",
+  lastUpdated: "12 September 2026",
 };
 
 /** Everyone we hand data to, and why. Listed openly in the privacy policy. */
