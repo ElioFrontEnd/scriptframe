@@ -56,10 +56,14 @@ export default function TermsPage() {
           credit is returned to your balance automatically.
         </p>
         <p>
-          Because credits are consumed immediately on use, purchases are
-          generally non-refundable. That said, if something goes wrong on our
-          side, email {SUPPORT_EMAIL} and we&apos;ll sort it out. We&apos;d
-          rather fix a bad experience than keep $19.
+          Unused credits can be refunded in full within 14 days of purchase, and
+          a part-used pack can be refunded for whatever is left. Credits already
+          spent on generated images aren&apos;t refundable, because the images
+          were made. The full detail is in our{" "}
+          <a className="underline" href="/refunds">
+            refund policy
+          </a>
+          .
         </p>
         <p>
           Prices may change, but any credits you already hold keep their value.

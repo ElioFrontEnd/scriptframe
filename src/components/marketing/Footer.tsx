@@ -39,6 +39,11 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link className="hover:text-[var(--ink)]" href="/refunds">
+                    Refunds
+                  </Link>
+                </li>
+                <li>
                   <a className="hover:text-[var(--ink)]" href={`mailto:${SUPPORT_EMAIL}`}>
                     Support
                   </a>
