@@ -3,6 +3,7 @@ import { generateBatch } from "./fal";
 import { putImage, imageKey } from "./storage";
 import { CREDITS_PER_IMAGE, LIMITS } from "./config";
 import { sendJobFinishedEmail } from "./email";
+import { toUserMessage } from "./userError";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -60,7 +61,9 @@ export async function processJobTick(admin: Admin, jobId: string) {
               .eq("id", item.id);
             return;
           } catch (err) {
-            error = err instanceof Error ? err.message : String(err);
+            const detail = err instanceof Error ? err.message : String(err);
+            console.error("frame generation failed", item.id, detail);
+            error = toUserMessage(err);
           }
         }
 

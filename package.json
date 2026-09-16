@@ -19,9 +19,11 @@
     "previews": "node scripts/make-style-previews.mjs",
     "test:transcript": "tsx scripts/check-transcript.ts",
     "test:auth": "tsx scripts/check-auth.ts",
-    "test:stripe": "node scripts/check-stripe.mjs",
-    "test": "npm run check && npm run lint && npm run test:transcript && npm run test:auth && npm run test:styles && npm run test:math",
-    "samples": "tsx scripts/make-samples.ts"
+    "test": "npm run check && npm run lint && npm run test:transcript && npm run test:auth && npm run test:paddle && npm run test:errors && npm run test:styles && npm run test:math",
+    "samples": "tsx scripts/make-samples.ts",
+    "test:paddle": "tsx scripts/check-paddle.ts",
+    "test:payments": "node scripts/check-payments.mjs",
+    "test:errors": "tsx scripts/check-errors.ts"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",

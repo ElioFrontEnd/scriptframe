@@ -12,7 +12,7 @@ export default function BuyCredits({ preselect }: { preselect?: string } = {}) {
     setError("");
     setBusy(packId);
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packId }),
@@ -93,7 +93,8 @@ export default function BuyCredits({ preselect }: { preselect?: string } = {}) {
       )}
 
       <p className="mt-4 text-[13px] text-[var(--ink-faint)]">
-        Payments handled by Stripe. Card details never touch our servers.
+        Payments are handled by Paddle, who act as the merchant of record. Card
+        details never touch our servers.
       </p>
     </div>
   );

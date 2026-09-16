@@ -163,7 +163,7 @@ $$;
 -- ------------------------------------------------------ purchases (004) --
 --
 -- The money-in path. What matters: a customer is credited exactly once per
--- checkout session, a replayed webhook is a no-op rather than a free top-up,
+-- payment, a re-delivered webhook is a no-op rather than a free top-up,
 -- and a purchase for an account that doesn't exist leaves nothing behind.
 do $$
 declare
@@ -185,7 +185,7 @@ begin
    where user_id = u and reason = 'purchase';
   perform assert(n = 1, 'the purchase is in the ledger once');
 
-  -- Stripe retries. It must not pay out twice.
+  -- The provider re-delivers the webhook. It must not pay out twice.
   select public.grant_purchase(u, 400, 'cs_test_alpha') into ok;
   perform assert(not ok, 'a replayed session reports already-credited');
 
@@ -233,7 +233,7 @@ begin
   end;
 
   select count(*) into n from public.credit_transactions
-   where stripe_session_id = 'cs_test_ghost';
+   where payment_ref = 'cs_test_ghost';
   perform assert(n = 0, 'and leaves no ledger row behind');
 
   raise notice 'purchase assertions passed';

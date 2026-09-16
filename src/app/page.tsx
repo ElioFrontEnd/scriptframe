@@ -56,7 +56,7 @@ export default async function Home() {
               </p>
 
               <div className="mx-auto mt-9 max-w-md" id="start">
-                <SignInForm />
+                <SignInForm showRemember={false} cta="Start free" />
                 <p className="mt-3 text-[13px] text-[var(--ink-faint)]">
                   40 free images when you sign up. No card required.
                 </p>
@@ -353,7 +353,7 @@ export default async function Home() {
               The first 40 images are on us.
             </p>
             <div className="mx-auto mt-8 max-w-md">
-              <SignInForm />
+              <SignInForm showRemember={false} cta="Start free" />
             </div>
           </div>
         </section>

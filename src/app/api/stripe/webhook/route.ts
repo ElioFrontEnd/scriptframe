@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * The success URL is just a redirect the user could visit by typing it, so it
  * can never be what grants credits. Signature verification below is what makes
  * this trustworthy, and the unique constraint on
- * credit_transactions.stripe_session_id makes a replayed webhook a no-op.
+ * credit_transactions.payment_ref makes a replayed webhook a no-op.
  */
 export async function POST(request: Request) {
   const key = process.env.STRIPE_SECRET_KEY;

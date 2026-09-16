@@ -71,11 +71,19 @@ a plain `.txt` file and point at it:
 npm run samples -- --script "C:\Users\Pozitron\Downloads\laki.txt"
 ```
 
+To fill in every remaining style — it skips the ones already done, so you only
+pay for what's missing:
+
+```
+npm run samples -- --all
+```
+
 Other options, if you want them:
 
 ```
 npm run samples -- --styles anime-still,dark-fantasy
 npm run samples -- --count 8
+npm run samples -- --styles stickman-whiteboard --force   # redo one you don't like
 ```
 
 Then look at it and push:
@@ -167,37 +175,67 @@ tax advice.
 
 ---
 
-## Step 4 — I swap the payment integration
+## Step 4 — The integration is already written
 
-Once Paddle approves you, tell me and I'll do this. It's about half a day.
+Done, 13 September. You don't have to wait for approval for this part, and you
+don't have to do anything to it.
 
-What changes: the checkout call and the webhook signature check. Two files.
+What was built: `/api/paddle/checkout` creates a Paddle transaction server-side
+and hands back its hosted checkout link, and `/api/paddle/webhook` verifies
+Paddle's signature and credits the account. The browser now posts to a single
+`/api/checkout`, which picks the provider from `PAYMENT_PROVIDER` — so switching
+is one environment variable, not a code change.
 
-What doesn't change: the credit packs and prices, the database function that
-grants credits atomically, the transaction ledger, the "payment received —
-adding your credits" banner, the balance, the history page. All of that was
-built to be independent of who processes the card, and it stays exactly as it
-is, including the tests.
+Unchanged, on purpose: the packs and prices, the atomic grant function, the
+ledger, the balance, the waiting banner, the history page, every existing test.
 
-You'll give me the Paddle **sandbox** keys first so we can test without real
-money, the same way we did with Stripe's test mode. As before: put them in
-`.env.local` and Vercel yourself — don't paste them into the chat.
+**Run migration 005** in the Supabase SQL editor
+(`supabase/migration-005-payment-ref.sql`). It renames the ledger's
+`stripe_session_id` column to `payment_ref`, since it now holds a Paddle
+transaction id. Safe to run twice, like the others.
 
----
+### What you need to do once approved
 
-## Step 5 — Test the new payment properly
+**1. Create the three products in Paddle.** Paddle > Catalog > Products. Make
+one product per pack with a one-time price:
 
-In Paddle's sandbox, with their test card:
+| Product name | Price | Pack id |
+|---|---|---|
+| Cutframe Starter — 400 images | $9 USD one-time | `starter` |
+| Cutframe Creator — 1,000 images | $19 USD one-time | `creator` |
+| Cutframe Studio — 3,000 images | $49 USD one-time | `studio` |
 
-- [ ] Buying a pack opens Paddle's checkout
-- [ ] Paying credits the account within a few seconds, without refreshing
-- [ ] The purchase shows in the History list
-- [ ] A cancelled checkout charges nothing and says so
-- [ ] A declined card leaves the balance untouched
+Copy each **price id** (starts `pri_`).
 
-Then switch to live keys, redeploy, and buy the $9 Starter pack yourself with
-your own card. It's the only way to know. Refund yourself afterwards from the
-Paddle dashboard.
+**2. Set the default payment link.** Paddle > Checkout > Checkout settings >
+Default payment link → `https://cutframe.app/app/billing`. Without this Paddle
+returns no checkout URL and the error will say so.
+
+**3. Create the webhook.** Paddle > Developer tools > Notifications > New
+destination. URL `https://cutframe.app/api/paddle/webhook`, and subscribe to
+**`transaction.completed`** only. Copy the secret (starts `pdl_ntfset_`).
+
+**4. Get an API key.** Paddle > Developer tools > Authentication.
+
+**5. Put them in `.env.local` and in Vercel** (Settings > Environment
+Variables), then redeploy:
+
+```
+PAYMENT_PROVIDER=paddle
+PADDLE_ENV=sandbox          # "live" only after step 5 of this doc passes
+PADDLE_API_KEY=...
+PADDLE_WEBHOOK_SECRET=...
+PADDLE_PRICE_STARTER=pri_...
+PADDLE_PRICE_CREATOR=pri_...
+PADDLE_PRICE_STUDIO=pri_...
+```
+
+Do the whole thing in **sandbox** first — it has its own separate keys, prices
+and webhook, and needs no domain approval. Only change `PADDLE_ENV` to `live`
+once a sandbox purchase has credited an account correctly.
+
+As always: those values go into `.env.local` and Vercel by your hand. Don't
+paste them into the chat.
 
 ---
 

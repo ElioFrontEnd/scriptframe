@@ -12,6 +12,7 @@ import {
 } from "@/lib/transcript";
 import { getStyle, asResolvedStyle, STYLE_PRESETS, type ResolvedStyle } from "@/lib/styles";
 import { LIMITS, estimateImageCount } from "@/lib/config";
+import { toUserMessage } from "@/lib/userError";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 120;
@@ -168,11 +169,16 @@ export async function POST(request: Request) {
       targetSeconds: timed ? usedTarget : undefined,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    // The provider's own message goes to our logs, where it is useful. What the
+    // customer sees is a sentence about their situation, not our stack.
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("prompt writing failed", job.id, detail);
+
+    const message = toUserMessage(err);
     await admin
       .from("jobs")
       .update({ status: "failed", error: message })
       .eq("id", job.id);
-    return fail(`Could not write the prompts: ${message}`, 502);
+    return fail(message, 502);
   }
 }
