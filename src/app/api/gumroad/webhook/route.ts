@@ -24,6 +24,9 @@ export async function POST(request: Request) {
   const form = new URLSearchParams(await request.text());
   const ping = parsePing(form);
 
+  // One line per Ping, so "did Gumroad reach us at all?" is answerable from the logs.
+  console.log("gumroad ping", ping.saleId ?? "(no sale id)", ping.userId ? "with user" : "no user", ping.test ? "TEST" : "");
+
   if (!ping.saleId) return NextResponse.json({ error: "no sale_id" }, { status: 400 });
 
   if (ping.test) {

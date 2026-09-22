@@ -144,6 +144,11 @@ export async function fetchSale(saleId: string, token: string): Promise<SaleLook
     | { success?: boolean; sale?: Sale; message?: string }
     | null;
 
+  // A rejected token is our mistake, not a forged sale. Saying so plainly — and
+  // answering 500 so Gumroad retries once it's fixed — beats silently refusing.
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, notFound: false, reason: `GUMROAD TOKEN REJECTED (HTTP ${res.status}) — check GUMROAD_ACCESS_TOKEN` };
+  }
   if (res.status === 404 || (body && body.success === false && res.status < 500)) {
     return { ok: false, notFound: true, reason: body?.message ?? `HTTP ${res.status}` };
   }
