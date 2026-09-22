@@ -28,6 +28,8 @@ const CASES = [
   { name: "stripe checkout",   method: "POST",   path: "/api/stripe/checkout",                        expect: [401] },
   { name: "paddle checkout",   method: "POST",   path: "/api/paddle/checkout",                        expect: [401] },
   { name: "paddle webhook",    method: "POST",   path: "/api/paddle/webhook",                         expect: [400, 500] },
+  { name: "gumroad checkout",  method: "POST",   path: "/api/gumroad/checkout",                       expect: [401] },
+  { name: "gumroad webhook",   method: "POST",   path: "/api/gumroad/webhook",                        expect: [400, 500] },
   { name: "stripe webhook",    method: "POST",   path: "/api/stripe/webhook",                         expect: [400, 500] },
   { name: "cron, no secret",   method: "GET",    path: "/api/cron/sweep",                             expect: [401] },
   {

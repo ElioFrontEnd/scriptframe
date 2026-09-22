@@ -9,7 +9,7 @@ import Faq from "@/components/marketing/Faq";
 import { getUser } from "@/lib/supabase/server";
 import { STYLE_PRESETS } from "@/lib/styles";
 import { hasAnySamples } from "@/lib/samples";
-import { CREDIT_PACKS, DENSITY_OPTIONS } from "@/lib/config";
+import { CREDIT_PACKS, DENSITY_OPTIONS, SIGNUP_BONUS_CREDITS } from "@/lib/config";
 
 const STEPS = [
   {
@@ -58,7 +58,7 @@ export default async function Home() {
               <div className="mx-auto mt-9 max-w-md" id="start">
                 <SignInForm showRemember={false} cta="Start free" />
                 <p className="mt-3 text-[13px] text-[var(--ink-faint)]">
-                  40 free images when you sign up. No card required.
+                  {SIGNUP_BONUS_CREDITS} free images when you sign up. No card required.
                 </p>
               </div>
             </div>
@@ -323,7 +323,7 @@ export default async function Home() {
             </div>
 
             <p className="mt-6 text-[13.5px] text-[var(--ink-faint)]">
-              Every account starts with 40 free images — enough for a short
+              Every account starts with {SIGNUP_BONUS_CREDITS} free images — enough for a short
               video — so you can see the output before paying for anything.
               Packs are bought from inside your account, so you&apos;ll sign in
               first either way.
@@ -350,7 +350,7 @@ export default async function Home() {
             </h2>
             <p className="mx-auto mt-4 max-w-md text-[16px] leading-relaxed text-[var(--ink-muted)]">
               Bring a script you&apos;ve already written and see what comes back.
-              The first 40 images are on us.
+              The first {SIGNUP_BONUS_CREDITS} images are on us.
             </p>
             <div className="mx-auto mt-8 max-w-md">
               <SignInForm showRemember={false} cta="Start free" />

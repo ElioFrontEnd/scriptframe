@@ -50,6 +50,16 @@ export function getPack(id: string): CreditPack | undefined {
   return CREDIT_PACKS.find((p) => p.id === id);
 }
 
+/**
+ * Free images a new account starts with.
+ *
+ * The database is the authority — app_settings.signup_bonus_credits, set by
+ * migration 006 — because the grant happens in a trigger. This constant exists
+ * so the marketing copy is written once and can't drift from it. Change both
+ * together, or the site promises something the database won't give.
+ */
+export const SIGNUP_BONUS_CREDITS = 25;
+
 /** One credit buys one generated image. */
 export const CREDITS_PER_IMAGE = 1;
 

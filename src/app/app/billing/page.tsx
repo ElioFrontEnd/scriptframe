@@ -11,12 +11,13 @@ const REASONS: Record<string, string> = {
   purchase: "Credit pack",
   generation: "Generated frames",
   refund_failed_images: "Refund — frames that failed",
+  manual_grant: "Added by hand",
 };
 
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string; cancelled?: string; pack?: string }>;
+  searchParams: Promise<{ paid?: string; cancelled?: string; pack?: string; waiting?: string }>;
 }) {
   const params = await searchParams;
   const user = await requireUserPage();
@@ -43,7 +44,9 @@ export default async function BillingPage({
       </p>
 
       <PaymentBanner
+        key={params.waiting ?? "none"}
         paid={!!params.paid}
+        waiting={!!params.waiting}
         cancelled={!!params.cancelled}
         credits={credits}
         supportEmail={SUPPORT_EMAIL}

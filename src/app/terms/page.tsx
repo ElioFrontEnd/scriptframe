@@ -56,6 +56,12 @@ export default function TermsPage() {
           credit is returned to your balance automatically.
         </p>
         <p>
+          Payments are processed by Gumroad, who sell the credit pack to you on
+          our behalf and issue your receipt. Your purchase is also subject to
+          Gumroad&apos;s terms. Questions about a charge can come to us at{" "}
+          {SUPPORT_EMAIL} and we&apos;ll sort it out with them.
+        </p>
+        <p>
           Unused credits can be refunded in full within 14 days of purchase, and
           a part-used pack can be refunded for whatever is left. Credits already
           spent on generated images aren&apos;t refundable, because the images

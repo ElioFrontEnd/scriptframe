@@ -1,16 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CREDIT_PACKS } from "@/lib/config";
 
 export default function BuyCredits({ preselect }: { preselect?: string } = {}) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const router = useRouter();
   const chosen = preselect ? CREDIT_PACKS.find((p) => p.id === preselect) : undefined;
 
   async function buy(packId: string) {
     setError("");
     setBusy(packId);
+    // Gumroad's checkout opens in a new tab, so this tab can sit on the billing
+    // page and show the credits arriving. The tab has to be opened here, inside
+    // the click — opened after the await below, browsers treat it as a popup
+    // and block it.
+    const tab = window.open("", "_blank");
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -19,8 +26,21 @@ export default function BuyCredits({ preselect }: { preselect?: string } = {}) {
       });
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error ?? "Checkout unavailable");
+
+      if (data.provider === "gumroad" && tab) {
+        tab.opener = null;
+        tab.location.href = data.url;
+        setBusy(null);
+        // A fresh value from the server each time, so a second purchase restarts the banner.
+        router.replace(`/app/billing?waiting=${encodeURIComponent(data.ref ?? packId)}`);
+        return;
+      }
+
+      // Redirect-style checkouts (Stripe, Paddle) come back to this page themselves.
+      tab?.close();
       window.location.assign(data.url);
     } catch (err) {
+      tab?.close();
       setError(err instanceof Error ? err.message : String(err));
       setBusy(null);
     }
@@ -93,8 +113,9 @@ export default function BuyCredits({ preselect }: { preselect?: string } = {}) {
       )}
 
       <p className="mt-4 text-[13px] text-[var(--ink-faint)]">
-        Payments are handled by Paddle, who act as the merchant of record. Card
-        details never touch our servers.
+        Checkout opens in a new tab on Gumroad, who handle the payment and send
+        your receipt. Card details never touch our servers, and credits appear
+        here on their own once you&apos;ve paid.
       </p>
     </div>
   );

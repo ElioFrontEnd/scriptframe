@@ -1,0 +1,140 @@
+CUTFRAME — GUMROAD SETUP, STEP BY STEP
+======================================
+
+The code is already done and sitting in C:\projects\cutframe.
+You make 3 products on Gumroad, paste 5 values into two places, push, test.
+
+
+STEP 1 — Payouts (so the money can reach you)
+---------------------------------------------
+Gumroad > Settings > Payments
+- Country: Albania
+- Add your bank details, save.
+
+
+STEP 2 — Make the 3 products
+----------------------------
+Gumroad > Products > New product. For EACH one:
+
+  Type:  Digital product
+  Name / price:
+
+    Cutframe — Starter, 400 images      $9
+    Cutframe — Creator, 1,000 images    $19
+    Cutframe — Studio, 3,000 images     $49
+
+Then, on the product's edit page:
+
+  Description (copy this in, change the number per pack):
+    400 image credits for Cutframe (cutframe.app). Credits are added to your
+    Cutframe account automatically a few seconds after you pay. They never
+    expire and there is no subscription.
+
+  Content (what the buyer sees after paying) — add a text block:
+    Your credits have been added to your Cutframe account. Go back to
+    https://cutframe.app/app/billing to see them. Anything wrong? Email
+    support@cutframe.app and include this receipt.
+
+  Settings to check:
+    - "Pay what you want": OFF
+    - Price in USD
+    - Don't create discount codes for these (a discounted sale is refused
+      by the site on purpose — it checks the price paid)
+
+  URL / permalink: set it to something clean, e.g.
+    cutframe-starter
+    cutframe-creator
+    cutframe-studio
+  (the part after /l/ in the product link). Write down all three.
+
+  Publish each product.
+
+
+STEP 3 — Tell Gumroad where to send sales (the "Ping")
+------------------------------------------------------
+Gumroad > Settings > Advanced > Ping endpoint:
+
+    https://cutframe.app/api/gumroad/webhook
+
+Save. (Don't press "Send test ping" expecting credits — test pings are
+ignored by design.)
+
+
+STEP 4 — Get your access token
+------------------------------
+Gumroad > Settings > Advanced > Applications > Create application
+  Name:          Cutframe
+  Redirect URI:  https://cutframe.app
+Create it, then click "Generate access token". Copy it.
+
+DO NOT paste the token into this chat. It can read every sale on your
+account. It only goes in the two places below.
+
+
+STEP 5 — Put the values in .env.local AND in Vercel
+---------------------------------------------------
+Open C:\projects\cutframe\.env.local in Notepad and add these lines at the
+bottom (use YOUR permalinks from step 2 and YOUR token from step 4):
+
+PAYMENT_PROVIDER=gumroad
+GUMROAD_ACCESS_TOKEN=paste-token-here
+GUMROAD_PRODUCT_STARTER=cutframe-starter
+GUMROAD_PRODUCT_CREATOR=cutframe-creator
+GUMROAD_PRODUCT_STUDIO=cutframe-studio
+
+Save.
+
+Then Vercel > your project > Settings > Environment Variables. Add the same
+five, one by one (name on the left, value on the right), for Production.
+If PAYMENT_PROVIDER already exists (set to paddle or stripe), edit it to
+gumroad.
+
+
+STEP 6 — Push the code
+----------------------
+Double-click ship.bat in C:\projects\cutframe.
+Commit message:  Gumroad payments
+
+Wait for Vercel to finish deploying (Vercel > Deployments, green "Ready").
+Pushing also redeploys with the new environment variables.
+
+
+STEP 7 — Test it with real money ($9)
+-------------------------------------
+Gumroad treats you buying your own product while logged in as a free
+"test purchase", and the site ignores those on purpose. So:
+
+1. Open a private/incognito window, go to cutframe.app, sign in to Cutframe.
+2. Credits > Buy on Starter. A Gumroad tab opens.
+3. Pay with a real card (yours is fine — just don't be logged in to
+   Gumroad in that window).
+4. Switch back to the Cutframe tab. Within about a minute: "Payment
+   received — 400 credits added".
+5. Check History on the billing page shows "Credit pack".
+6. If you want the money back: Gumroad > Sales > that sale > Refund.
+   Then remove the 400 credits by hand in Supabase (I'll give you the line).
+
+If the credits DON'T appear, don't try again — tell me, and I'll read the
+Vercel logs with you. Every failure logs a line starting with
+"GUMROAD SALE" saying exactly why.
+
+
+WHAT THE SITE CHECKS ON EVERY SALE (so you know it's safe)
+----------------------------------------------------------
+- It never trusts the ping. It asks Gumroad's API "is this sale real?"
+  using your token. A faked ping credits nothing.
+- The product must be one of your 3 packs, paid, not refunded or disputed,
+  and at full price.
+- The number of credits comes from the site's own price table, never from
+  the request.
+- The same sale can only ever be credited once.
+- If someone buys straight from your Gumroad page (not through the site),
+  it credits the Cutframe account with the same email. If there isn't one,
+  it logs "GUMROAD SALE UNATTRIBUTED" and you add it by hand.
+
+
+WHAT'S STILL YOURS TO DO (from before)
+--------------------------------------
+- Run migrations 005 and 006 in Supabase if you haven't.
+- Set a spend cap on fal.ai.
+- Delete "resend api key .txt" from Downloads.

@@ -25,7 +25,7 @@ begin
   insert into auth.users (id, email) values (u, 'test@example.com');
 
   select credits into bal from public.profiles where id = u;
-  perform assert(bal = 40, 'new account starts with 40 credits');
+  perform assert(bal = 25, 'new account starts with the signup bonus');
 
   select count(*) into n from public.credit_transactions
    where user_id = u and reason = 'signup_bonus';
@@ -40,7 +40,7 @@ begin
   perform assert(paid, 'spend succeeds when the balance covers it');
 
   select credits into bal from public.profiles where id = u;
-  perform assert(bal = 30, 'balance is decremented by the amount spent');
+  perform assert(bal = 15, 'balance is decremented by the amount spent');
 
   select count(*) into n from public.credit_transactions
    where user_id = u and reason = 'generation' and delta = -10;
@@ -50,7 +50,7 @@ begin
   perform assert(not paid, 'spend fails when the balance is short');
 
   select credits into bal from public.profiles where id = u;
-  perform assert(bal = 30, 'a failed spend changes nothing');
+  perform assert(bal = 15, 'a failed spend changes nothing');
 
   select public.spend_credits(u, 0, j) into paid;
   perform assert(not paid, 'spending zero is rejected');
@@ -59,16 +59,16 @@ begin
   perform assert(not paid, 'spending a negative amount is rejected');
 
   select credits into bal from public.profiles where id = u;
-  perform assert(bal = 30, 'negative spend cannot inflate the balance');
+  perform assert(bal = 15, 'negative spend cannot inflate the balance');
 
   ------------------------------------------------------------------ refund --
   perform public.refund_credits(u, 4, j);
   select credits into bal from public.profiles where id = u;
-  perform assert(bal = 34, 'refund returns credits');
+  perform assert(bal = 19, 'refund returns credits');
 
   perform public.refund_credits(u, -100, j);
   select credits into bal from public.profiles where id = u;
-  perform assert(bal = 34, 'a negative refund is ignored');
+  perform assert(bal = 19, 'a negative refund is ignored');
 
   ----------------------------------------------------------------- blocked --
   update public.profiles set is_blocked = true where id = u;
@@ -269,5 +269,132 @@ begin
   end loop;
 
   raise notice 'grant assertions passed';
+end;
+$$;
+
+
+-- ------------------------------------------------- free-tier limits (006) --
+--
+-- The free tier is the only place a stranger can cost us money without paying.
+-- What must hold: a throwaway address gets nothing, a real one gets the bonus,
+-- and a flood stops itself at the daily ceiling rather than running up a bill.
+do $$
+declare
+  u   uuid;
+  bal integer;
+  n   integer;
+  cap integer;
+begin
+  -- A normal signup still works.
+  insert into auth.users (email) values ('real.person@gmail.com') returning id into u;
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 25, 'a normal signup gets the free credits');
+
+  select count(*) into n from public.credit_transactions
+   where user_id = u and reason = 'signup_bonus';
+  perform assert(n = 1, 'the free grant is recorded in the ledger');
+
+  -- A disposable address gets an account but nothing free.
+  insert into auth.users (email) values ('farmer@mailinator.com') returning id into u;
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 0, 'a disposable address gets no free credits');
+
+  select count(*) into n from public.credit_transactions
+   where user_id = u and reason = 'signup_bonus';
+  perform assert(n = 0, 'and no ledger row, because nothing moved');
+
+  select count(*) into n from public.profiles where id = u;
+  perform assert(n = 1, 'but the account still exists, so they could still buy');
+
+  -- Case shouldn't matter.
+  insert into auth.users (email) values ('Farmer2@MailInAtor.com') returning id into u;
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 0, 'the blocklist is case-insensitive');
+
+  -- The circuit breaker. Earlier tests in this run have already been granted
+  -- bonuses inside the same 24-hour window, so set the ceiling relative to what
+  -- has actually been handed out: room for exactly one more signup.
+  select coalesce(sum(delta), 0) into n from public.credit_transactions
+   where reason = 'signup_bonus' and created_at > now() - interval '24 hours';
+
+  update public.app_settings set value = n + 25 where key = 'free_credits_per_day';
+  select value into cap from public.app_settings where key = 'free_credits_per_day';
+  perform assert(cap = n + 25, 'the daily ceiling is configurable without a deploy');
+
+  insert into auth.users (email) values ('flood1@example.com') returning id into u;
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 25, 'the last signup that fits under the ceiling is unaffected');
+
+  insert into auth.users (email) values ('flood2@example.com') returning id into u;
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 0, 'the signup that would breach the ceiling gets nothing');
+
+  insert into auth.users (email) values ('flood3@example.com') returning id into u;
+  select credits into bal from public.profiles where id = u;
+  perform assert(bal = 0, 'and every one after it, until the window rolls');
+
+  select coalesce(sum(delta), 0) into n from public.credit_transactions
+   where reason = 'signup_bonus' and created_at > now() - interval '24 hours';
+  perform assert(n <= cap, 'free credits handed out never exceed the ceiling');
+
+  -- Put it back so nothing downstream is affected.
+  update public.app_settings set value = 500 where key = 'free_credits_per_day';
+
+  raise notice 'free-tier assertions passed';
+end;
+$$;
+
+-- The defences must not be readable from the browser. Publishing the blocklist
+-- would just tell an abuser which domains still work.
+do $$
+declare r text; t text;
+begin
+  foreach t in array array['app_settings', 'blocked_email_domains'] loop
+    foreach r in array array['anon', 'authenticated'] loop
+      perform assert(
+        not has_table_privilege(r, 'public.' || t, 'select'),
+        format('%s is not readable by %s', t, r));
+    end loop;
+  end loop;
+  raise notice 'free-tier privacy assertions passed';
+end;
+$$;
+
+-- ------------------------------------------------------- data exposure --
+--
+-- The browser holds the anon key, which is public by design — anyone who opens
+-- the site has it. What stops it reading other people's scripts and images is
+-- row-level security. These assertions check the shape of that directly, so a
+-- table added later without RLS fails the suite instead of leaking quietly.
+do $$
+declare
+  t text;
+  n integer;
+begin
+  -- Every table holding customer data has RLS switched on.
+  foreach t in array array['profiles', 'credit_transactions', 'jobs', 'job_images', 'custom_styles'] loop
+    select count(*) into n
+      from pg_tables where schemaname = 'public' and tablename = t and rowsecurity;
+    perform assert(n = 1, format('%s has row-level security enabled', t));
+  end loop;
+
+  -- Nothing is writable from the browser. Every policy is SELECT-only, so a
+  -- stolen session can read its owner's rows and change nothing — credits
+  -- included.
+  select count(*) into n
+    from pg_policies
+   where schemaname = 'public'
+     and cmd <> 'SELECT';
+  perform assert(n = 0, 'no policy allows INSERT, UPDATE or DELETE from the browser');
+
+  -- And every read policy is scoped to the signed-in user rather than open.
+  select count(*) into n
+    from pg_policies
+   where schemaname = 'public'
+     and qual is not null
+     and qual not like '%auth.uid()%';
+  perform assert(n = 0, 'every read policy is scoped to auth.uid()');
+
+  raise notice 'data exposure assertions passed';
 end;
 $$;

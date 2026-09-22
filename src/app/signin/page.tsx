@@ -5,7 +5,7 @@ import Nav from "@/components/marketing/Nav";
 import Footer from "@/components/marketing/Footer";
 import { getUser } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/authCookies";
-import { getPack } from "@/lib/config";
+import { getPack, SIGNUP_BONUS_CREDITS } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -50,13 +50,13 @@ export default async function SignInPage({
               <>
                 Sign in first and we&apos;ll take you straight to checkout for{" "}
                 {pack.credits.toLocaleString()} images at ${pack.priceUsd}. New
-                accounts get 40 free images, so you can try it before you pay.
+                accounts get {SIGNUP_BONUS_CREDITS} free images, so you can try it before you pay.
               </>
             ) : (
               <>
                 Enter your email and we&apos;ll send you a link. There is no
                 password to remember, and the same link creates your account if
-                you don&apos;t have one — with 40 free images to start.
+                you don&apos;t have one — with {SIGNUP_BONUS_CREDITS} free images to start.
               </>
             )}
           </p>

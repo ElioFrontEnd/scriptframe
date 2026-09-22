@@ -47,7 +47,8 @@ export default function PrivacyPage() {
             Credit and payment records.
           </strong>{" "}
           What you bought and what you spent. Card details never touch our
-          servers — Stripe handles payment entirely.
+          servers — Gumroad handles payment entirely and shares with us only the
+          email you paid with, what you bought and what it cost.
         </p>
         <p>
           <strong className="font-medium text-[var(--ink)]">

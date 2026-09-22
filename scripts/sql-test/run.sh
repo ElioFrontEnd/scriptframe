@@ -42,6 +42,10 @@ run -f "$ROOT/supabase/migration-005-payment-ref.sql" >/dev/null
 echo "  ok   migration 005 applies on top of it"
 run -f "$ROOT/supabase/migration-005-payment-ref.sql" >/dev/null
 echo "  ok   migration 005 is safe to re-run"
+run -f "$ROOT/supabase/migration-006-abuse.sql" >/dev/null
+echo "  ok   migration 006 applies on top of it"
+run -f "$ROOT/supabase/migration-006-abuse.sql" >/dev/null
+echo "  ok   migration 006 is safe to re-run"
 
 echo
 echo "Function behaviour:"

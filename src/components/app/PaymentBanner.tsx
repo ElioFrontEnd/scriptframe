@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * The banner shown after coming back from Stripe.
+ * The banner shown while a payment is on its way.
  *
  * Stripe redirects the browser the moment the card clears, but the credits
  * arrive on a separate webhook a second or two later. Without this the customer
@@ -18,13 +18,22 @@ import { useRouter } from "next/navigation";
 const EVERY_MS = 2000;
 const ATTEMPTS = 10;
 
+/**
+ * Gumroad's checkout is in another tab and the customer may take minutes to
+ * type a card number, so that mode checks less often and for much longer.
+ */
+const WAIT_EVERY_MS = 4000;
+const WAIT_ATTEMPTS = 225; // 15 minutes
+
 export default function PaymentBanner({
   paid,
+  waiting: checkoutOpen = false,
   cancelled,
   credits,
   supportEmail,
 }: {
   paid: boolean;
+  waiting?: boolean;
   cancelled: boolean;
   credits: number;
   supportEmail: string;
@@ -36,17 +45,65 @@ export default function PaymentBanner({
   const [tries, setTries] = useState(0);
 
   const arrived = credits !== startingCredits;
-  const gaveUp = tries >= ATTEMPTS;
-  const waiting = paid && !arrived && !gaveUp;
+  const gaveUp = tries >= (checkoutOpen ? WAIT_ATTEMPTS : ATTEMPTS);
+  const waiting = (paid || checkoutOpen) && !arrived && !gaveUp;
 
   useEffect(() => {
     if (!waiting) return;
-    const t = setTimeout(() => {
-      setTries((n) => n + 1);
-      router.refresh();
-    }, EVERY_MS);
+    const t = setTimeout(
+      () => {
+        setTries((n) => n + 1);
+        router.refresh();
+      },
+      checkoutOpen ? WAIT_EVERY_MS : EVERY_MS,
+    );
     return () => clearTimeout(t);
-  }, [waiting, tries, router]);
+  }, [waiting, tries, router, checkoutOpen]);
+
+  // Coming back to this tab from the Gumroad one is the likeliest moment the
+  // payment has just gone through — check straight away rather than on the timer.
+  useEffect(() => {
+    if (!waiting || !checkoutOpen) return;
+    const onFocus = () => router.refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [waiting, checkoutOpen, router]);
+
+  if (checkoutOpen && !paid) {
+    if (arrived) {
+      return (
+        <div
+          className="mt-6 rounded-[10px] bg-[var(--good-soft)] px-4 py-3 text-[14px] text-[var(--good)]"
+          aria-live="polite"
+        >
+          Payment received — {(credits - startingCredits).toLocaleString()} credits
+          added to your balance. Thank you!
+        </div>
+      );
+    }
+    if (waiting) {
+      return (
+        <div
+          className="mt-6 rounded-[10px] bg-[var(--paper-sunk)] px-4 py-3 text-[14px] leading-relaxed text-[var(--ink-muted)]"
+          aria-live="polite"
+        >
+          Checkout is open in a new tab. Once you&apos;ve paid there, your
+          credits show up here on their own — usually within a minute. If no tab
+          opened, check that your browser didn&apos;t block it.
+        </div>
+      );
+    }
+    return (
+      <div className="mt-6 rounded-[10px] bg-[var(--paper-sunk)] px-4 py-3 text-[14px] leading-relaxed text-[var(--ink-muted)]">
+        No payment has come through yet. If you did pay, reload this page in a
+        minute; if the credits still aren&apos;t there, email{" "}
+        <a className="underline" href={`mailto:${supportEmail}`}>
+          {supportEmail}
+        </a>{" "}
+        with your Gumroad receipt and we&apos;ll add them by hand.
+      </div>
+    );
+  }
 
   if (cancelled) {
     return (
