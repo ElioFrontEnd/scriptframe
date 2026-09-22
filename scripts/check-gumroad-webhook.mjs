@@ -18,6 +18,9 @@ const OTHER = "11111111-2222-4333-8444-555555555555";
 // ---------------------------------------------------------------- fakes
 const SALES = {
   real: { id: "real", price: 1900, product_permalink: "https://cutframeofficial.gumroad.com/l/crtr", email: "buyer@example.com", paid: true },
+  // What Gumroad really sends: the sale has only the random short code; the
+  // custom permalink lives on the product record.
+  custom: { id: "custom", price: 900, product_id: "prod_ext_1", product_permalink: "xkqpz", email: "owner@example.com", paid: true },
   refunded: { id: "refunded", price: 1900, product_permalink: "crtr", paid: true, refunded: true },
   cheap: { id: "cheap", price: 100, product_permalink: "crtr", paid: true },
   ebook: { id: "ebook", price: 1900, product_permalink: "some-ebook", paid: true },
@@ -47,6 +50,13 @@ const fake = http.createServer((req, res) => {
       const sale = SALES[decodeURIComponent(m[1])];
       return sale ? send(200, { success: true, sale }) : send(404, { success: false, message: "not found" });
     }
+    const pm = url.pathname.match(/^\/v2\/products\/(.+)$/);
+    if (pm) {
+      if (gumroadDown) return send(502, { success: false });
+      return pm[1] === "prod_ext_1"
+        ? send(200, { success: true, product: { id: "prod_ext_1", short_url: "https://cutframeofficial.gumroad.com/l/cutframe-starter", custom_permalink: "cutframe-starter" } })
+        : send(404, { success: false });
+    }
     // Supabase: profiles lookups
     if (url.pathname === "/rest/v1/profiles") {
       const id = url.searchParams.get("id")?.replace(/^eq\./, "");
@@ -74,7 +84,7 @@ const server = spawn("npx", ["next", "dev", "-p", String(PORT)], {
     ...process.env,
     GUMROAD_API_BASE: `http://localhost:${FAKE}/v2`,
     GUMROAD_ACCESS_TOKEN: "test-token",
-    GUMROAD_PRODUCT_STARTER: "strt",
+    GUMROAD_PRODUCT_STARTER: "strt,cutframe-starter",
     GUMROAD_PRODUCT_CREATOR: "crtr",
     GUMROAD_PRODUCT_STUDIO: "stdo",
     NEXT_PUBLIC_SUPABASE_URL: `http://localhost:${FAKE}`,
@@ -142,6 +152,9 @@ try {
 
   check("a user id that doesn't exist falls back to email", await ping({ sale_id: "stranger", ...u("99999999-2222-4333-8444-555555555555") }), 200);
   check("…still not credited", grants.length, 2);
+
+  check("custom-permalink product (the real-world case) → 200", await ping({ sale_id: "custom", ...u(UID) }), 200);
+  check("…credited as Starter via the product record", [grants.at(-1)?.p_session, grants.at(-1)?.p_credits], ["gum_custom", 400]);
 
   gumroadDown = true;
   check("Gumroad API down → 500 so Gumroad retries", await ping({ sale_id: "cheap", ...u(UID) }), 500);

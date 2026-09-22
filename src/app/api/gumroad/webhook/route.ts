@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fetchSale, judgeSale, parsePing } from "@/lib/gumroad";
+import { fetchProductCodes, fetchSale, judgeSale, packForSale, parsePing } from "@/lib/gumroad";
 
 /**
  * Gumroad's "Ping" lands here after every sale.
@@ -46,9 +46,23 @@ export async function POST(request: Request) {
   }
 
   const sale = lookup.sale;
-  const verdict = judgeSale(sale, ping.saleId);
+
+  // The sale names its product only by Gumroad's random short code. If that
+  // isn't one we configured, ask for the product itself, whose link uses the
+  // custom permalink (e.g. "cutframe-starter").
+  let extraCodes: string[] = [];
+  if (!packForSale(sale) && sale.product_id) {
+    const product = await fetchProductCodes(sale.product_id, token);
+    if (!product.ok) {
+      console.error("gumroad product lookup failed", ping.saleId, sale.product_id, product.reason);
+      return NextResponse.json({ error: "lookup failed" }, { status: 500 });
+    }
+    extraCodes = product.codes;
+  }
+
+  const verdict = judgeSale(sale, ping.saleId, process.env, extraCodes);
   if (!verdict.ok) {
-    console.error("GUMROAD SALE NOT CREDITED", ping.saleId, verdict.reason, sale.email ?? "");
+    console.error("GUMROAD SALE NOT CREDITED", ping.saleId, verdict.reason, sale.email ?? "", sale.product_permalink ?? "", extraCodes.join(","));
     return NextResponse.json({ received: true, credited: false });
   }
 

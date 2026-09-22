@@ -158,10 +158,42 @@ export async function fetchSale(saleId: string, token: string): Promise<SaleLook
   return { ok: true, sale: body.sale };
 }
 
+export type ProductLookup =
+  | { ok: true; codes: string[] }
+  | { ok: false; reason: string };
+
+/**
+ * The permalinks a product answers to.
+ *
+ * Needed because a sale only carries the product's random short code
+ * (product_permalink = Gumroad's unique_permalink), while the product's own
+ * record gives its short_url, which uses the custom permalink when one is set
+ * — "cutframe-starter" rather than "xkqpz". Without this, a product with a
+ * custom permalink never matches its sale.
+ */
+export async function fetchProductCodes(productId: string, token: string): Promise<ProductLookup> {
+  let res: Response;
+  try {
+    res = await fetch(`${API}/products/${encodeURIComponent(productId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+  } catch (err) {
+    return { ok: false, reason: `network: ${String(err)}` };
+  }
+  const body = (await res.json().catch(() => null)) as
+    | { product?: { custom_permalink?: string; short_url?: string; id?: string } }
+    | null;
+  if (!res.ok || !body?.product) return { ok: false, reason: `HTTP ${res.status}` };
+  const p = body.product;
+  return { ok: true, codes: [p.custom_permalink, p.short_url].map(normaliseCode).filter(Boolean) };
+}
+
 /** Which of our packs a sale was for, by product, or undefined. */
 export function packForSale(
   sale: Sale,
   env: Record<string, string | undefined> = process.env,
+  extraCodes: string[] = [],
 ): CreditPack | undefined {
   const saleCodes = [
     sale.product_permalink,
@@ -169,6 +201,7 @@ export function packForSale(
     sale.custom_permalink,
     sale.short_product_id,
     sale.product_id,
+    ...extraCodes,
   ]
     .map(normaliseCode)
     .filter(Boolean);
@@ -186,13 +219,14 @@ export function judgeSale(
   sale: Sale,
   saleId: string,
   env: Record<string, string | undefined> = process.env,
+  extraCodes: string[] = [],
 ): { ok: true; pack: CreditPack; credits: number } | { ok: false; reason: string } {
   if (sale.id !== saleId) return { ok: false, reason: "sale id mismatch" };
   if (sale.paid === false) return { ok: false, reason: "not paid" };
   if (sale.refunded || sale.partially_refunded) return { ok: false, reason: "refunded" };
   if (sale.chargedback || sale.disputed) return { ok: false, reason: "disputed" };
 
-  const pack = packForSale(sale, env);
+  const pack = packForSale(sale, env, extraCodes);
   if (!pack) return { ok: false, reason: "product is not a Cutframe pack" };
 
   // Someone who buys two Starter packs in one go gets 800 images, and pays for them.
